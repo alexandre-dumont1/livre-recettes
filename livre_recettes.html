@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Le Livre de Recettes</title>
+
+<!-- Police qui capture le style cursif de la grand-mère : 
+     inclinée ~8°, boucles ouvertes, liaisons fluides, 
+     irrégularité naturelle du tracé -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,700;1,400&family=Crimson+Text:ital@0;1&display=swap" rel="stylesheet">
+
+<style>
+/* ═══════════════════════════════════════════════
+   POLICE MANUSCRITE PERSONNALISÉE
+   Basée sur l'analyse de l'écriture :
+   - Inclinaison ~8° vers la droite
+   - Boucles ouvertes (g, p, j, y)
+   - Liaisons continues entre lettres
+   - Irrégularité légère (humanisation)
+   - Titres en capitales espacées
+   ═══════════════════════════════════════════════ */
+
+@font-face {
+  font-family: 'GrandMere';
+  /* Caveat est la police qui ressemble le plus à cette écriture :
+     même inclinaison légère, même espacement ouvert, mêmes boucles */
+  src: local('Caveat');
+}
+
+:root {
+  --paper: #faf7f0;
+  --paper-left: #f5f1e8;
+  --paper-right: #fdfaf4;
+  --ink: #2a2018;
+  --ink-light: #4a3828;
+  --ink-faded: #8a7060;
+  --ruled-line: rgba(100, 140, 180, 0.12);
+  --spine: #c8a87a;
+  --spine-dark: #8b6b45;
+  --cover: #1a1008;
+  --cover-text: #d4a854;
+  --shadow: rgba(0,0,0,0.4);
+  --page-shadow: rgba(0,0,0,0.15);
+  --accent: #8b2e2e;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #0d0a06;
+  background-image: 
+    radial-gradient(ellipse at 30% 40%, rgba(139,107,69,0.15) 0%, transparent 60%),
+    radial-gradient(ellipse at 70% 60%, rgba(26,16,8,0.8) 0%, transparent 60%);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Crimson Text', Georgia, serif;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Grain texture */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ═══════ TOP BAR ═══════ */
+.topbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 52px;
+  background: rgba(13,10,6,0.95);
+  border-bottom: 1px solid rgba(200,168,122,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2rem;
+  z-index: 200;
+}
+
+.book-title {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 1.1rem;
+  color: var(--cover-text);
+  letter-spacing: 0.05em;
+}
+
+.nav-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.search-input {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(200,168,122,0.25);
+  color: #e8d8b8;
+  padding: 0.35rem 0.8rem;
+  font-family: 'Crimson Text', serif;
+  font-size: 0.9rem;
+  width: 200px;
+  outline: none;
+}
+
+.search-input::placeholder { color: rgba(200,168,122,0.4); }
+.search-input:focus { border-color: rgba(200,168,122,0.5); }
+
+.cat-btn {
+  background: none;
+  border: 1px solid rgba(200,168,122,0.2);
+  color: rgba(200,168,122,0.7);
+  padding: 0.3rem 0.7rem;
+  font-family: 'Crimson Text', serif;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.05em;
+}
+.cat-btn:hover, .cat-btn.active {
+  background: rgba(200,168,122,0.12);
+  color: var(--cover-text);
+  border-color: rgba(200,168,122,0.4);
+}
+
+.page-counter {
+  font-family: 'Caveat', cursive;
+  font-size: 0.95rem;
+  color: rgba(200,168,122,0.5);
+  min-width: 80px;
+  text-align: right;
+}
+
+/* ═══════ BOOK STAGE ═══════ */
+.stage {
+  position: relative;
+  z-index: 10;
+  perspective: 2000px;
+  margin-top: 52px;
+}
+
+/* ═══════ THE BOOK ═══════ */
+.book {
+  position: relative;
+  width: 1040px;
+  height: 680px;
+  transform-style: preserve-3d;
+}
+
+/* Spine */
+.book-spine {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+  width: 18px;
+  height: 100%;
+  background: linear-gradient(to right, var(--spine-dark), var(--spine), var(--spine-dark));
+  z-index: 50;
+  box-shadow: 0 0 15px rgba(0,0,0,0.6);
+}
+
+.book-spine::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, 
+    rgba(255,255,255,0.2) 0%,
+    transparent 20%,
+    transparent 80%,
+    rgba(0,0,0,0.2) 100%
+  );
+}
+
+/* ═══════ PAGES ═══════ */
+.page-container {
+  position: absolute;
+  width: 50%;
+  height: 100%;
+  top: 0;
+  transform-origin: right center;
+  transform-style: preserve-3d;
+  transition: transform 0.8s cubic-bezier(0.645, 0.045, 0.355, 1.000);
+}
+
+.page-container.left-side {
+  left: 0;
+  transform-origin: right center;
+}
+
+.page-container.right-side {
+  right: 0;
+  left: 50%;
+  transform-origin: left center;
+}
+
+/* Flip animation */
+.page-container.flipping-out {
+  transform: rotateY(-180deg);
+  z-index: 100;
+}
+
+.page-container.flipping-in {
+  transform: rotateY(180deg);
+  z-index: 100;
+  transition: none;
+}
+
+.page-container.flipping-in.animate {
+  transform: rotateY(0deg);
+  transition: transform 0.8s cubic-bezier(0.645, 0.045, 0.355, 1.000);
+}
+
+.page-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+}
+
+/* ═══════ LEFT PAGE — RECETTE ═══════ */
+.page-left {
+  background: var(--paper-left);
+  box-shadow: 
+    inset -8px 0 20px rgba(0,0,0,0.08),
+    -4px 0 30px rgba(0,0,0,0.3);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 2.5rem 2.2rem 2rem 2.5rem;
+}
+
+/* Papier millimétré très léger */
+.page-left::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: 
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 24px,
+      var(--ruled-line) 24px,
+      var(--ruled-line) 25px
+    );
+  pointer-events: none;
+}
+
+/* Marge rouge */
+.page-left::after {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0;
+  left: 60px;
+  width: 1px;
+  background: rgba(180, 60, 60, 0.15);
+}
+
+/* Corner fold */
+.corner-fold {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 0 36px 36px;
+  border-color: transparent transparent rgba(180,160,130,0.3) transparent;
+}
+
+/* ═══════ RIGHT PAGE — MEDIA ═══════ */
+.page-right {
+  background: var(--paper-right);
+  box-shadow: 
+    inset 8px 0 20px rgba(0,0,0,0.05),
+    4px 0 30px rgba(0,0,0,0.25);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 2.2rem 2rem;
+  gap: 1rem;
+}
+
+/* Subtil grain papier */
+.page-right::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
+/* ═══════ TYPOGRAPHY MANUSCRITE ═══════ */
+
+/* La police Caveat avec ajustements qui imitent l'écriture :
+   - skewX imite l'inclinaison naturelle
+   - letter-spacing ouvert comme dans les originaux
+   - line-height généreux */
+
+.handwritten {
+  font-family: 'Caveat', cursive;
+  color: var(--ink);
+  line-height: 1.65;
+}
+
+.recipe-title-written {
+  font-family: 'Caveat', cursive;
+  font-size: 1.55rem;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 0.3rem;
+  position: relative;
+  /* Les titres originaux sont en majuscules espacées comme GRAVLAX, PANNA COTTA */
+}
+
+/* Soulignement fait main */
+.title-underline {
+  display: block;
+  height: 1px;
+  background: var(--ink-light);
+  margin: 0.15rem 0 0.9rem;
+  opacity: 0.5;
+  position: relative;
+}
+
+.title-underline::after {
+  content: '';
+  position: absolute;
+  right: 30%;
+  top: 1px;
+  height: 0.5px;
+  width: 20%;
+  background: var(--ink-faded);
+  opacity: 0.4;
+}
+
+.servings-note {
+  font-family: 'Caveat', cursive;
+  font-size: 1.0rem;
+  color: var(--ink-light);
+  margin-bottom: 0.8rem;
+  display: block;
+  font-style: italic;
+}
+
+/* Section ingrédients */
+.section-header {
+  font-family: 'Caveat', cursive;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--ink-faded);
+  display: block;
+  margin: 0.8rem 0 0.4rem;
+  opacity: 0.7;
+}
+
+.ingredients-written {
+  list-style: none;
+  margin-bottom: 0.6rem;
+}
+
+.ingredients-written li {
+  font-family: 'Caveat', cursive;
+  font-size: 1.05rem;
+  color: var(--ink);
+  padding: 0.05rem 0;
+  display: flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  line-height: 1.55;
+}
+
+/* Tiret manuscrit */
+.ingredients-written li::before {
+  content: '—';
+  color: var(--ink-faded);
+  font-size: 0.8rem;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.ingr-qty-written {
+  color: var(--ink-light);
+  font-weight: 600;
+  white-space: nowrap;
+  font-size: 1.0rem;
+}
+
+/* Groupe label ingrédients */
+.group-label-written {
+  font-family: 'Caveat', cursive;
+  font-size: 0.9rem;
+  color: var(--ink-faded);
+  font-style: italic;
+  margin: 0.5rem 0 0.2rem 0.5rem;
+  display: block;
+  /* Soulignement léger */
+  border-bottom: 1px dotted rgba(100,80,60,0.2);
+  padding-bottom: 0.15rem;
+}
+
+/* Étapes */
+.steps-written {
+  list-style: none;
+  margin-top: 0.3rem;
+}
+
+.step-written {
+  font-family: 'Caveat', cursive;
+  font-size: 1.0rem;
+  color: var(--ink);
+  line-height: 1.6;
+  margin-bottom: 0.6rem;
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+}
+
+.step-num-written {
+  font-family: 'Caveat', cursive;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--accent);
+  opacity: 0.7;
+  flex-shrink: 0;
+  width: 1.4rem;
+  text-align: right;
+}
+
+.step-title-written {
+  font-style: italic;
+  color: var(--ink-faded);
+  font-size: 0.85rem;
+}
+
+/* Notes */
+.notes-written {
+  font-family: 'Caveat', cursive;
+  font-size: 0.95rem;
+  color: var(--ink-light);
+  font-style: italic;
+  line-height: 1.55;
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.7rem;
+  border-left: 2px solid rgba(139,46,46,0.25);
+  background: rgba(139,46,46,0.03);
+}
+
+/* Overflow scroll dans les pages */
+.page-scroll {
+  overflow-y: auto;
+  flex: 1;
+  padding-right: 0.3rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(139,107,69,0.3) transparent;
+  position: relative;
+  z-index: 1;
+}
+
+.page-scroll::-webkit-scrollbar { width: 4px; }
+.page-scroll::-webkit-scrollbar-thumb { background: rgba(139,107,69,0.3); border-radius: 2px; }
+
+/* ═══════ PAGE DROITE CONTENU ═══════ */
+
+.right-title {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 1.05rem;
+  color: var(--ink-faded);
+  text-align: center;
+  margin-bottom: 0.3rem;
+  opacity: 0.7;
+}
+
+.right-meta {
+  display: flex;
+  gap: 1.2rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 0.8rem;
+}
+
+.right-meta-item {
+  font-family: 'Caveat', cursive;
+  font-size: 0.9rem;
+  color: var(--ink-faded);
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.right-meta-icon {
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+/* Photo placeholder */
+.photo-zone {
+  width: 100%;
+  aspect-ratio: 4/3;
+  background: rgba(180,160,130,0.08);
+  border: 1px dashed rgba(180,160,130,0.25);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.photo-placeholder {
+  font-family: 'Caveat', cursive;
+  font-size: 0.9rem;
+  color: rgba(180,160,130,0.4);
+  font-style: italic;
+  text-align: center;
+  line-height: 1.6;
+}
+
+/* Cadre polaroid si image */
+.photo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Zone PDF */
+.pdf-zone {
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  border: 1px solid rgba(180,160,130,0.2);
+  background: rgba(250,247,240,0.5);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.pdf-header {
+  background: rgba(180,160,130,0.12);
+  padding: 0.4rem 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(180,160,130,0.15);
+  flex-shrink: 0;
+}
+
+.pdf-label {
+  font-family: 'Caveat', cursive;
+  font-size: 0.8rem;
+  color: var(--ink-faded);
+  font-style: italic;
+}
+
+.pdf-open-btn {
+  font-family: 'Caveat', cursive;
+  font-size: 0.8rem;
+  color: var(--accent);
+  text-decoration: none;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+.pdf-open-btn:hover { opacity: 1; }
+
+.pdf-iframe {
+  flex: 1;
+  width: 100%;
+  border: none;
+  background: white;
+}
+
+.pdf-placeholder {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem;
+}
+
+.pdf-icon {
+  font-size: 2rem;
+  opacity: 0.3;
+}
+
+.pdf-placeholder-text {
+  font-family: 'Caveat', cursive;
+  font-size: 0.9rem;
+  color: rgba(100,80,60,0.4);
+  font-style: italic;
+  text-align: center;
+}
+
+/* ═══════ NAV ARROWS ═══════ */
+.nav-arrow {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(200,168,122,0.08);
+  border: 1px solid rgba(200,168,122,0.2);
+  color: rgba(200,168,122,0.6);
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.2rem;
+  transition: all 0.25s;
+  z-index: 200;
+  user-select: none;
+}
+
+.nav-arrow:hover {
+  background: rgba(200,168,122,0.18);
+  color: var(--cover-text);
+  border-color: rgba(200,168,122,0.4);
+}
+
+.nav-arrow:disabled {
+  opacity: 0.2;
+  cursor: default;
+}
+
+.nav-prev { left: 1.5rem; }
+.nav-next { right: 1.5rem; }
+
+/* ═══════ OUTER BOOK SHADOW ═══════ */
+.book-outer {
+  position: relative;
+}
+
+.book-outer::before {
+  content: '';
+  position: absolute;
+  bottom: -20px;
+  left: 5%;
+  right: 5%;
+  height: 30px;
+  background: radial-gradient(ellipse, rgba(0,0,0,0.5) 0%, transparent 70%);
+  filter: blur(8px);
+  z-index: -1;
+}
+
+/* ═══════ TABLE DES MATIÈRES ═══════ */
+.toc-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.8);
+  z-index: 300;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+
+.toc-overlay.open { display: flex; }
+
+.toc-panel {
+  background: var(--paper-left);
+  width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 2rem;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+
+.toc-title {
+  font-family: 'Caveat', cursive;
+  font-size: 1.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--ink);
+  border-bottom: 1px solid rgba(100,80,60,0.2);
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.toc-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  font-size: 1.3rem;
+  color: var(--ink-faded);
+  cursor: pointer;
+}
+
+.toc-list {
+  list-style: none;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.15rem 1rem;
+}
+
+.toc-item {
+  font-family: 'Caveat', cursive;
+  font-size: 1.0rem;
+  color: var(--ink-light);
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: background 0.15s;
+  border-radius: 2px;
+}
+
+.toc-item:hover {
+  background: rgba(139,107,69,0.08);
+  color: var(--ink);
+}
+
+.toc-cat-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Bouton table des matières */
+.toc-btn {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(200,168,122,0.08);
+  border: 1px solid rgba(200,168,122,0.2);
+  color: rgba(200,168,122,0.6);
+  padding: 0.5rem 1.5rem;
+  font-family: 'Caveat', cursive;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  z-index: 200;
+  letter-spacing: 0.08em;
+}
+
+.toc-btn:hover {
+  background: rgba(200,168,122,0.15);
+  color: var(--cover-text);
+}
+
+/* ═══════ LOADING ═══════ */
+.loading-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-family: 'Caveat', cursive;
+  font-size: 1.2rem;
+  color: var(--ink-faded);
+  font-style: italic;
+}
+
+/* Page numéro */
+.page-number {
+  position: absolute;
+  bottom: 1rem;
+  font-family: 'Caveat', cursive;
+  font-size: 0.85rem;
+  color: var(--ink-faded);
+  opacity: 0.5;
+}
+
+.page-number.left { left: 2.5rem; }
+.page-number.right { right: 2.5rem; }
+
+/* ═══════ RESPONSIVE ═══════ */
+@media (max-width: 1100px) {
+  .book { width: 880px; height: 580px; }
+}
+
+@media (max-width: 950px) {
+  .book { width: 720px; height: 480px; }
+  .recipe-title-written { font-size: 1.3rem; }
+  .ingredients-written li { font-size: 0.95rem; }
+  .step-written { font-size: 0.9rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="book-title">Le Livre de Recettes de la Famille</div>
+  <div class="nav-controls">
+    <input type="search" class="search-input" id="search" placeholder="Chercher une recette…">
+    <div style="display:flex;gap:0.4rem">
+      <button class="cat-btn active" data-cat="0">Toutes</button>
+      <button class="cat-btn" data-cat="1">Entrées</button>
+      <button class="cat-btn" data-cat="2">Plats</button>
+      <button class="cat-btn" data-cat="3">Poissons</button>
+      <button class="cat-btn" data-cat="4">Desserts</button>
+    </div>
+    <div class="page-counter" id="pageCounter">— / —</div>
+  </div>
+</div>
+
+<!-- BOOK -->
+<div class="stage">
+  <div class="book-outer">
+    <div class="book" id="book">
+      <!-- Spine -->
+      <div class="book-spine"></div>
+
+      <!-- LEFT PAGE -->
+      <div class="page-container left-side" id="leftPage">
+        <div class="page-face page-left" id="leftFace">
+          <div class="loading-page">Chargement des recettes…</div>
+        </div>
+      </div>
+
+      <!-- RIGHT PAGE -->
+      <div class="page-container right-side" id="rightPage">
+        <div class="page-face page-right" id="rightFace">
+          <div class="loading-page" style="flex-direction:column;gap:0.5rem">
+            <div style="font-size:2rem;opacity:0.2">📖</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NAV ARROWS -->
+<button class="nav-arrow nav-prev" id="prevBtn" onclick="changePage(-1)" disabled>‹</button>
+<button class="nav-arrow nav-next" id="nextBtn" onclick="changePage(1)">›</button>
+
+<!-- TABLE DES MATIÈRES BUTTON -->
+<button class="toc-btn" onclick="openTOC()">☰ Table des matières</button>
+
+<!-- TABLE DES MATIÈRES -->
+<div class="toc-overlay" id="tocOverlay" onclick="closeTOCOutside(event)">
+  <div class="toc-panel">
+    <button class="toc-close" onclick="closeTOC()">✕</button>
+    <div class="toc-title">Table des Matières</div>
+    <ul class="toc-list" id="tocList"></ul>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://bxxuorvdntaggxmwqicm.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ4eHVvcnZkbnRhZ2d4bXdxaWNtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NDgxOTgsImV4cCI6MjA4ODEyNDE5OH0.3Zy5HmD-9IERsPfGrSiaskd2GBh5sSUZfw4AyAHQKsE';
+
+const CAT_NAMES = { 1: 'Entrée', 2: 'Plat', 3: 'Poisson', 4: 'Dessert', 5: 'Gibier', 6: 'Accompagnement' };
+const CAT_COLORS = { 1: '#8b3a3a', 2: '#3a5a8b', 3: '#1a6b5a', 4: '#7a5a1a', 5: '#5a3a6b', 6: '#4a6b3a' };
+
+let allRecipes = [];
+let filteredRecipes = [];
+let currentIndex = 0;
+let isAnimating = false;
+let currentCat = 0;
+
+async function api(path) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` }
+  });
+  return r.json();
+}
+
+function formatTime(min) {
+  if (!min) return null;
+  if (min < 60) return min + ' min';
+  const h = Math.floor(min / 60), m = min % 60;
+  return m ? `${h}h${String(m).padStart(2,'0')}` : `${h}h`;
+}
+
+async function loadRecipes() {
+  allRecipes = await api('recipes?select=*&order=title');
+  filteredRecipes = [...allRecipes];
+  buildTOC();
+  await showPage(0);
+}
+
+// ═══════ RENDER LEFT PAGE ═══════
+async function renderLeft(recipe) {
+  const [ingredients, steps] = await Promise.all([
+    api(`recipe_ingredients?select=*,ingredients(name)&recipe_id=eq.${recipe.id}&order=display_order`),
+    api(`recipe_steps?select=*&recipe_id=eq.${recipe.id}&order=step_number`)
+  ]);
+
+  const cat = CAT_NAMES[recipe.category_id] || '';
+  const totalMin = (recipe.prep_time_minutes||0) + (recipe.cook_time_minutes||0) + (recipe.rest_time_minutes||0);
+
+  // Grouper ingrédients
+  const groups = {};
+  ingredients.forEach(i => {
+    const g = i.group_label || '__main__';
+    if (!groups[g]) groups[g] = [];
+    groups[g].push(i);
+  });
+
+  let ingrHTML = '';
+  Object.entries(groups).forEach(([g, items]) => {
+    if (g !== '__main__') {
+      ingrHTML += `<span class="group-label-written">${g}</span>`;
+    }
+    ingrHTML += `<ul class="ingredients-written">`;
+    items.forEach(i => {
+      const qty = i.quantity ? `${i.quantity}${i.unit ? ' ' + i.unit : ''}` : (i.unit || '');
+      const prep = i.preparation ? ` <em style="opacity:0.65;font-size:0.85em">(${i.preparation})</em>` : '';
+      ingrHTML += `<li><span class="ingr-qty-written">${qty}</span><span>${i.ingredients?.name || ''}${prep}</span></li>`;
+    });
+    ingrHTML += `</ul>`;
+  });
+
+  let stepsHTML = '';
+  if (steps.length) {
+    stepsHTML = `<ol class="steps-written">`;
+    steps.forEach(s => {
+      const dur = s.duration_minutes ? `<span style="opacity:0.5;font-size:0.8em"> — ${formatTime(s.duration_minutes)}</span>` : '';
+      const temp = s.temperature_celsius ? `<span style="color:var(--accent);opacity:0.7;font-size:0.8em"> • ${s.temperature_celsius}°C</span>` : '';
+      stepsHTML += `
+        <li class="step-written">
+          <span class="step-num-written">${s.step_number}.</span>
+          <div>
+            <span class="step-title-written">${s.title}${dur}${temp}</span>
+            <div>${s.description}</div>
+          </div>
+        </li>`;
+    });
+    stepsHTML += `</ol>`;
+  }
+
+  const notesHTML = recipe.notes ? `<div class="notes-written">✎ ${recipe.notes}</div>` : '';
+  const servings = recipe.servings ? `Pour ${recipe.servings} ${recipe.servings_unit || 'personnes'}` : '';
+
+  return `
+    <div class="page-scroll">
+      <span class="recipe-title-written">${recipe.title}</span>
+      <span class="title-underline"></span>
+      ${servings ? `<span class="servings-note">${servings}</span>` : ''}
+      
+      ${ingredients.length ? `<span class="section-header">Ingrédients</span>${ingrHTML}` : ''}
+      ${steps.length ? `<span class="section-header">Préparation</span>${stepsHTML}` : ''}
+      ${notesHTML}
+    </div>
+    <span class="page-number left">${currentIndex + 1}</span>
+    <div class="corner-fold"></div>`;
+}
+
+// ═══════ RENDER RIGHT PAGE ═══════
+function renderRight(recipe) {
+  const cat = CAT_NAMES[recipe.category_id] || '';
+  const times = [];
+  if (recipe.prep_time_minutes) times.push(`⏱ Prépa : ${formatTime(recipe.prep_time_minutes)}`);
+  if (recipe.cook_time_minutes) times.push(`🔥 Cuisson : ${formatTime(recipe.cook_time_minutes)}`);
+  if (recipe.rest_time_minutes) times.push(`⏳ Repos : ${formatTime(recipe.rest_time_minutes)}`);
+  if (recipe.difficulty) times.push(`● ${recipe.difficulty}`);
+
+  const metaHTML = times.map(t => `<span class="right-meta-item">${t}</span>`).join('');
+
+  const tagsHTML = recipe.tags && recipe.tags.length
+    ? recipe.tags.slice(0,5).map(t => `<span style="font-family:'Caveat',cursive;font-size:0.75rem;padding:0.1rem 0.5rem;background:rgba(139,107,69,0.07);color:var(--ink-faded);border-radius:1px">${t}</span>`).join(' ')
+    : '';
+
+  // Photo zone
+  const photoHTML = `
+    <div class="photo-zone">
+      <div class="photo-placeholder">
+        <div style="font-size:2rem;opacity:0.2;margin-bottom:0.3rem">📷</div>
+        <div>Photo à venir</div>
+      </div>
+    </div>`;
+
+  // PDF zone
+  const pdfHTML = recipe.pdf_url ? `
+    <div class="pdf-zone">
+      <div class="pdf-header">
+        <span class="pdf-label">Recette originale manuscrite</span>
+        <a href="${recipe.pdf_url}" target="_blank" class="pdf-open-btn">↗ Ouvrir</a>
+      </div>
+      <iframe class="pdf-iframe" src="${recipe.pdf_url}" title="Recette PDF"></iframe>
+    </div>` : `
+    <div class="pdf-zone">
+      <div class="pdf-placeholder">
+        <div class="pdf-icon">📄</div>
+        <div class="pdf-placeholder-text">Pas de recette originale<br>disponible pour cette recette</div>
+      </div>
+    </div>`;
+
+  return `
+    <div class="right-title">${cat}</div>
+    <div class="right-meta">${metaHTML}</div>
+    ${tagsHTML ? `<div style="display:flex;gap:0.3rem;flex-wrap:wrap;justify-content:center;margin-bottom:0.5rem">${tagsHTML}</div>` : ''}
+    ${photoHTML}
+    ${pdfHTML}
+    <span class="page-number right">${currentIndex + 2}</span>`;
+}
+
+// ═══════ SHOW PAGE (sans animation) ═══════
+async function showPage(index) {
+  currentIndex = index;
+  const recipe = filteredRecipes[index];
+  if (!recipe) return;
+
+  document.getElementById('leftFace').innerHTML = `<div class="loading-page">…</div>`;
+  document.getElementById('rightFace').innerHTML = `<div class="loading-page"></div>`;
+
+  const [leftHTML, rightHTML] = await Promise.all([
+    renderLeft(recipe),
+    Promise.resolve(renderRight(recipe))
+  ]);
+
+  document.getElementById('leftFace').innerHTML = leftHTML;
+  document.getElementById('rightFace').innerHTML = rightHTML;
+
+  updateControls();
+}
+
+// ═══════ FLIP ANIMATION ═══════
+async function changePage(dir) {
+  if (isAnimating) return;
+  const newIndex = currentIndex + dir;
+  if (newIndex < 0 || newIndex >= filteredRecipes.length) return;
+
+  isAnimating = true;
+
+  const leftPage = document.getElementById('leftPage');
+  const rightPage = document.getElementById('rightPage');
+
+  if (dir > 0) {
+    // Tourner vers l'avant : la page gauche part vers la gauche
+    leftPage.style.transition = 'transform 0.7s cubic-bezier(0.645,0.045,0.355,1)';
+    leftPage.style.transform = 'rotateY(180deg)';
+    leftPage.style.zIndex = '100';
+  } else {
+    // Tourner vers l'arrière : la page droite part vers la droite
+    rightPage.style.transition = 'transform 0.7s cubic-bezier(0.645,0.045,0.355,1)';
+    rightPage.style.transform = 'rotateY(-180deg)';
+    rightPage.style.zIndex = '100';
+  }
+
+  // Préparer le nouveau contenu pendant l'animation
+  const recipe = filteredRecipes[newIndex];
+
+  setTimeout(async () => {
+    currentIndex = newIndex;
+
+    // Charger contenu
+    const leftFace = document.getElementById('leftFace');
+    const rightFace = document.getElementById('rightFace');
+
+    leftFace.innerHTML = `<div class="loading-page">…</div>`;
+    rightFace.innerHTML = `<div class="loading-page"></div>`;
+
+    // Reset des transformations
+    leftPage.style.transition = 'none';
+    leftPage.style.transform = '';
+    leftPage.style.zIndex = '';
+    rightPage.style.transition = 'none';
+    rightPage.style.transform = '';
+    rightPage.style.zIndex = '';
+
+    const [leftHTML] = await Promise.all([renderLeft(recipe)]);
+    leftFace.innerHTML = leftHTML;
+    rightFace.innerHTML = renderRight(recipe);
+
+    updateControls();
+    isAnimating = false;
+  }, 700);
+}
+
+function updateControls() {
+  const total = filteredRecipes.length;
+  document.getElementById('prevBtn').disabled = currentIndex <= 0;
+  document.getElementById('nextBtn').disabled = currentIndex >= total - 1;
+  document.getElementById('pageCounter').textContent = `${currentIndex + 1} / ${total}`;
+}
+
+// ═══════ SEARCH & FILTER ═══════
+let currentCatFilter = 0;
+
+function applyFilter() {
+  const q = document.getElementById('search').value.toLowerCase();
+  filteredRecipes = allRecipes.filter(r => {
+    const catOk = currentCatFilter === 0 || r.category_id === currentCatFilter;
+    const qOk = !q || r.title.toLowerCase().includes(q) || (r.tags||[]).some(t => t.toLowerCase().includes(q));
+    return catOk && qOk;
+  });
+  currentIndex = 0;
+  showPage(0);
+  buildTOC();
+}
+
+document.getElementById('search').addEventListener('input', applyFilter);
+
+document.querySelectorAll('.cat-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentCatFilter = parseInt(btn.dataset.cat);
+    applyFilter();
+  });
+});
+
+// ═══════ TABLE DES MATIÈRES ═══════
+function buildTOC() {
+  const list = document.getElementById('tocList');
+  list.innerHTML = filteredRecipes.map((r, i) => {
+    const color = CAT_COLORS[r.category_id] || '#888';
+    return `<li class="toc-item" onclick="goToRecipe(${i})">
+      <span class="toc-cat-dot" style="background:${color}"></span>
+      <span>${r.title}</span>
+    </li>`;
+  }).join('');
+}
+
+function goToRecipe(i) {
+  closeTOC();
+  currentIndex = i;
+  showPage(i);
+}
+
+function openTOC() { document.getElementById('tocOverlay').classList.add('open'); }
+function closeTOC() { document.getElementById('tocOverlay').classList.remove('open'); }
+function closeTOCOutside(e) { if (e.target === document.getElementById('tocOverlay')) closeTOC(); }
+
+// Keyboard nav
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') changePage(1);
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') changePage(-1);
+  if (e.key === 'Escape') closeTOC();
+  if (e.key === 't' || e.key === 'T') openTOC();
+});
+
+// Init
+loadRecipes();
+</script>
+</body>
+</html>
