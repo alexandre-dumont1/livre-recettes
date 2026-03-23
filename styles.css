@@ -372,6 +372,55 @@ body {
 }
 .ingr-prep { font-style: italic; color: rgba(90,74,56,0.45); }
 
+/* ─ AJUSTEUR DE PORTIONS ─ */
+.serving-scaler {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 6px 0 8px;
+  flex-wrap: wrap;
+}
+.serving-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-mid);
+  opacity: 0.6;
+  margin-right: 2px;
+}
+.serving-btn {
+  background: rgba(90,74,56,0.08);
+  border: 1px solid rgba(90,74,56,0.18);
+  color: var(--ink-mid);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  width: 28px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.serving-btn:hover {
+  background: rgba(184,100,30,0.1);
+  border-color: rgba(184,100,30,0.35);
+  color: var(--terra);
+}
+.serving-btn--active {
+  background: var(--terra);
+  border-color: var(--terra);
+  color: #fff;
+}
+.serving-btn--active:hover {
+  background: var(--terra);
+  border-color: var(--terra);
+  color: #fff;
+}
+
 /* ─ ÉTAPES ─ */
 .step-item {
   display: flex;
