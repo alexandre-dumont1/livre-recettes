@@ -89,6 +89,17 @@ function toggleFav(id) {
   showPage(currentIndex);
 }
 
+// ── COPIER LE LIEN ────────────────────────────────────────────────────────────
+
+function copyRecipeLink(btn) {
+  if (!navigator.clipboard) return;
+  navigator.clipboard.writeText(window.location.href).then(() => {
+    const original = btn.textContent;
+    btn.textContent = '✓ Copié !';
+    setTimeout(() => { btn.textContent = original; }, 2000);
+  }).catch(() => {});
+}
+
 // ── COVER / PAGE DE GARDE ─────────────────────────────────────────────────────
 
 function buildTOCGroups(recipes) {
@@ -332,6 +343,7 @@ function renderRight(recipe) {
     <div class="right-footer">
       <div class="tags-row">${tagsHTML}</div>
       <div style="display:flex;align-items:center;gap:10px">
+        <button class="copy-link-btn" onclick="copyRecipeLink(this)" title="Copier le lien vers cette recette" aria-label="Copier le lien vers cette recette">⛓ Copier</button>
         <button class="fav-btn${isFav ? ' fav-btn--active' : ''}" onclick="toggleFav(${recipe.id})" title="${isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}" aria-label="${isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}">${isFav ? '★' : '☆'}</button>
         <span class="page-num-right">${currentIndex * 2 + 2}</span>
       </div>
