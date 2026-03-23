@@ -412,6 +412,28 @@ function renderPDF(url) {
 
 // ── UPLOAD PHOTOS ─────────────────────────────────────────────────────────────
 
+async function compressImage(file, maxWidth = 1200, quality = 0.82) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const w = Math.min(img.naturalWidth, maxWidth);
+      const h = img.naturalHeight * (w / img.naturalWidth);
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      canvas.toBlob(blob => {
+        if (blob) resolve(blob);
+        else reject(new Error('Compression échouée'));
+      }, 'image/jpeg', quality);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Chargement image échoué')); };
+    img.src = url;
+  });
+}
+
 async function uploadPhoto(event, recipeId, slot) {
   const file = event.target.files[0];
   if (!file) return;
@@ -419,11 +441,12 @@ async function uploadPhoto(event, recipeId, slot) {
   if (label) label.innerHTML = '<span class="photo-slot-label">Envoi en cours…</span>';
 
   try {
-    const path = `${recipeId}/${slot}-${Date.now()}.${file.name.split('.').pop()}`;
+    const blob = await compressImage(file);
+    const path = `${recipeId}/${slot}-${Date.now()}.jpg`;
     const uploadRes = await fetch(`${URL_SB}/storage/v1/object/recipe-photos/${path}`, {
       method: 'POST',
-      headers: { apikey: KEY_SB, Authorization: `Bearer ${KEY_SB}`, 'Content-Type': file.type },
-      body: file
+      headers: { apikey: KEY_SB, Authorization: `Bearer ${KEY_SB}`, 'Content-Type': 'image/jpeg' },
+      body: blob
     });
     if (!uploadRes.ok) throw new Error('Upload échoué');
 
