@@ -636,6 +636,27 @@ async function submitRecipe(e) {
   }
 }
 
+// ── SWIPE TACTILE ─────────────────────────────────────────────────────────────
+
+(function () {
+  let touchStartX = 0, touchStartY = 0;
+  const target = document.querySelector('.book-outer');
+  if (!target) return;
+
+  target.addEventListener('touchstart', e => {
+    touchStartX = e.changedTouches[0].clientX;
+    touchStartY = e.changedTouches[0].clientY;
+  }, { passive: true });
+
+  target.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    const dy = e.changedTouches[0].clientY - touchStartY;
+    // Ignorer les swipes verticaux et les mouvements trop courts
+    if (Math.abs(dx) < 50 || Math.abs(dy) > Math.abs(dx)) return;
+    changePage(dx < 0 ? 1 : -1);
+  }, { passive: true });
+})();
+
 // ── CLAVIER ───────────────────────────────────────────────────────────────────
 
 document.addEventListener('keydown', e => {
