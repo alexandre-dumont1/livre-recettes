@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bold Provence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500&family=Caveat:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --terra:   #b8641e;
+  --lavande: #6e4f8a;
+  --ochre:   #c4923a;
+  --ink:     #141008;
+  --ink-mid: #5a4a38;
+  --page-l:  #faf8f4;
+  --page-r:  #f2ece0;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #0e0a06;
+  background-image:
+    radial-gradient(ellipse 70% 60% at 30% 20%, rgba(180,100,30,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 70% at 75% 80%, rgba(110,79,138,0.06) 0%, transparent 60%);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  gap: 20px;
+  font-family: 'Barlow', sans-serif;
+}
+
+.demo-label {
+  color: rgba(255,220,160,0.18);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+}
+
+/* ── BOOK ── */
+.book {
+  display: flex;
+  width: 1080px;
+  height: 700px;
+  filter: drop-shadow(0 60px 120px rgba(0,0,0,0.85));
+}
+
+/* ══════════════════════════════
+   PAGE GAUCHE — tout le texte
+   ══════════════════════════════ */
+.page-left {
+  flex: 1;
+  background: var(--page-l);
+  padding: 36px 36px 28px 46px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  box-shadow: inset -8px 0 24px rgba(0,0,0,0.05);
+  overflow: hidden;
+}
+
+/* Numéro de page */
+.page-num {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 400;
+  font-size: 11px;
+  color: rgba(90,74,56,0.3);
+  letter-spacing: 0.1em;
+  margin-bottom: 8px;
+  display: block;
+}
+
+/* Catégorie */
+.cat-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.cat-tag-bar { width: 24px; height: 3px; background: var(--terra); }
+.cat-tag-text {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 10.5px;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--terra);
+}
+
+/* ── TITRE HÉROÏQUE ── */
+.recipe-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 900;
+  font-size: 72px;
+  line-height: 0.87;
+  color: var(--ink);
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  margin-bottom: 10px;
+}
+.recipe-title .accent { color: var(--terra); }
+
+/* Source + ligne Souleiado */
+.recipe-meta-line {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 10px;
+}
+.recipe-source {
+  font-family: 'Caveat', cursive;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--lavande);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-shrink: 0;
+}
+.recipe-source::before {
+  content: '';
+  width: 16px; height: 1px;
+  background: var(--lavande);
+  opacity: 0.45;
+}
+.souleiado {
+  flex: 1;
+  height: 3px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--terra)   0px, var(--terra)   5px,
+    var(--page-l)  5px, var(--page-l)  7px,
+    var(--ochre)   7px, var(--ochre)   12px,
+    var(--page-l)  12px,var(--page-l)  14px,
+    var(--lavande) 14px,var(--lavande) 19px,
+    var(--page-l)  19px,var(--page-l)  21px
+  );
+  opacity: 0.4;
+}
+
+/* ── MÉTA HORIZONTALE ── */
+.meta-row {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(90,74,56,0.08);
+}
+.meta-item { display: flex; flex-direction: column; gap: 1px; }
+.meta-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 7.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(90,74,56,0.4);
+}
+.meta-value {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--ink);
+  line-height: 1;
+}
+
+/* ── CORPS EN DEUX COLONNES ── */
+.recipe-body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 22px;
+  min-height: 0;
+}
+
+/* ─ En-têtes de section ─ */
+.col-header {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 800;
+  font-size: 9.5px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--terra);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.col-header::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(184,100,30,0.18);
+}
+
+/* ─ INGRÉDIENTS ─ */
+.ingr-group-label {
+  font-family: 'Caveat', cursive;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--lavande);
+  margin: 7px 0 2px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.ingr-group-label::before {
+  content: '◆';
+  font-size: 6px;
+  color: var(--ochre);
+  opacity: 0.7;
+}
+.ingr-row {
+  display: flex;
+  font-size: 11.5px;
+  font-weight: 300;
+  color: var(--ink-mid);
+  line-height: 1.6;
+}
+.ingr-qty {
+  min-width: 46px;
+  text-align: right;
+  padding-right: 7px;
+  color: var(--terra);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+.ingr-prep { font-style: italic; color: rgba(90,74,56,0.45); }
+
+/* ─ ÉTAPES ─ */
+.step-item {
+  display: flex;
+  gap: 9px;
+  margin-bottom: 10px;
+  align-items: flex-start;
+}
+.step-num {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 900;
+  font-size: 26px;
+  line-height: 1;
+  color: var(--terra);
+  opacity: 0.3;
+  flex-shrink: 0;
+  width: 26px;
+  text-align: right;
+}
+.step-body { flex: 1; }
+.step-title-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 2px;
+  flex-wrap: wrap;
+}
+.step-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.step-badge {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 600;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  padding: 0px 5px;
+  border-radius: 2px;
+}
+.badge-time { color: var(--ochre); border: 1px solid rgba(196,146,58,0.28); background: rgba(196,146,58,0.05); }
+.badge-temp { color: var(--terra); border: 1px solid rgba(184,100,30,0.22); background: rgba(184,100,30,0.04); }
+.step-desc {
+  font-size: 11px;
+  font-weight: 300;
+  color: var(--ink-mid);
+  line-height: 1.55;
+}
+
+/* ─ NOTE (span les 2 colonnes) ─ */
+.note-row {
+  grid-column: 1 / -1;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(90,74,56,0.08);
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+.note-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 8px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ochre);
+  flex-shrink: 0;
+}
+.note-text {
+  font-family: 'Caveat', cursive;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(90,74,56,0.55);
+  line-height: 1.35;
+}
+
+/* ══════════════════════════════
+   SPINE
+   ══════════════════════════════ */
+.spine {
+  width: 3px;
+  background: linear-gradient(to bottom, var(--terra), var(--ochre) 50%, var(--lavande));
+  flex-shrink: 0;
+  opacity: 0.55;
+}
+
+/* ══════════════════════════════
+   PAGE DROITE — PDF + photos
+   ══════════════════════════════ */
+.page-right {
+  flex: 1;
+  background: var(--page-r);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  position: relative;
+  box-shadow: inset 8px 0 24px rgba(0,0,0,0.05);
+}
+
+/* ─ ZONE MANUSCRIT (haut, ~60%) ─ */
+.manuscript-zone {
+  flex: 1.6;
+  padding: 32px 36px 12px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+}
+
+.manuscript-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.manuscript-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 9px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(90,74,56,0.4);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.manuscript-label::before {
+  content: '';
+  width: 18px; height: 1px;
+  background: var(--terra);
+  opacity: 0.4;
+}
+.manuscript-open {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 600;
+  font-size: 8.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(90,74,56,0.28);
+}
+
+/* Photo-lien pour le PDF */
+.photo-link {
+  display: block;
+  text-decoration: none;
+  cursor: pointer;
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+}
+.photo-link:hover { transform: scale(1.012) translateY(-2px); }
+
+.photo-shadow { position: absolute; inset: 0; background: var(--terra); transform: translate(5px,5px); opacity: 0.14; z-index: 0; }
+.photo-inner {
+  position: relative; z-index: 1;
+  background: white;
+  padding: 4px 4px 0;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.13);
+  line-height: 0;
+  height: 100%;
+  display: flex;
+  align-items: flex-start;
+  overflow: hidden;
+}
+
+#pdf-thumb {
+  display: block;
+  max-width: 100%;
+  filter: contrast(1.03) brightness(1.01);
+}
+#pdf-fallback {
+  display: none;
+  width: 100%;
+  height: 260px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 6px;
+  background: #ede8dc;
+  color: var(--ink-mid);
+  font-family: 'Caveat', cursive;
+  font-size: 14px;
+  text-align: center;
+}
+
+.manuscript-caption {
+  font-family: 'Caveat', cursive;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--terra);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* ─ SÉPARATEUR SOULEIADO ─ */
+.divider-r {
+  height: 3px;
+  margin: 0 28px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--terra)   0px, var(--terra)   5px,
+    var(--page-r)  5px, var(--page-r)  7px,
+    var(--ochre)   7px, var(--ochre)   12px,
+    var(--page-r)  12px,var(--page-r)  14px,
+    var(--lavande) 14px,var(--lavande) 19px,
+    var(--page-r)  19px,var(--page-r)  21px
+  );
+  opacity: 0.35;
+  flex-shrink: 0;
+}
+
+/* ─ ZONE PHOTOS (bas, ~35%) ─ */
+.photos-zone {
+  flex: 1;
+  padding: 12px 28px 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+}
+
+.photos-header {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 9px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(90,74,56,0.35);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.photos-header::after {
+  content: '';
+  flex: 1; height: 1px;
+  background: rgba(90,74,56,0.1);
+}
+
+.photos-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  min-height: 0;
+}
+
+.photo-slot {
+  background: rgba(90,74,56,0.04);
+  border: 1.5px dashed rgba(90,74,56,0.15);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.photo-slot:hover {
+  background: rgba(184,100,30,0.04);
+  border-color: rgba(184,100,30,0.25);
+}
+
+.photo-slot-icon {
+  font-size: 22px;
+  opacity: 0.25;
+}
+
+.photo-slot-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 600;
+  font-size: 8.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(90,74,56,0.3);
+}
+
+/* Tags + num page droite */
+.right-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  flex-shrink: 0;
+  margin-top: -4px;
+}
+.tags-row {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.tag {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 600;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--terra);
+  background: rgba(184,100,30,0.07);
+  border: 1px solid rgba(184,100,30,0.16);
+  padding: 2px 6px;
+}
+.page-num-right {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 400;
+  font-size: 11px;
+  color: rgba(90,74,56,0.3);
+  letter-spacing: 0.1em;
+}
+</style>
+</head>
+<body>
+
+<div class="demo-label">Bold Provence</div>
+
+<div class="book">
+
+  <!-- ══ PAGE GAUCHE — tout le texte ══ -->
+  <div class="page-left">
+
+    <span class="page-num">14</span>
+
+    <div class="cat-tag">
+      <div class="cat-tag-bar"></div>
+      <span class="cat-tag-text">Dessert · Recette de famille</span>
+    </div>
+
+    <div class="recipe-title">
+      BISCUITS<br>
+      MERINGU<span class="accent">É</span>S<br>
+      <span class="accent">AUX FRAISES</span>
+    </div>
+
+    <div class="recipe-meta-line">
+      <div class="recipe-source">recette de famille</div>
+      <div class="souleiado"></div>
+    </div>
+
+    <div class="meta-row">
+      <div class="meta-item"><span class="meta-label">Personnes</span><span class="meta-value">6</span></div>
+      <div class="meta-item"><span class="meta-label">Difficulté</span><span class="meta-value" style="font-size:13px">Difficile</span></div>
+      <div class="meta-item"><span class="meta-label">Prép.</span><span class="meta-value">40'</span></div>
+      <div class="meta-item"><span class="meta-label">Cuisson</span><span class="meta-value">20'</span></div>
+    </div>
+
+    <div class="recipe-body">
+
+      <!-- INGRÉDIENTS -->
+      <div>
+        <div class="col-header">Ingrédients</div>
+
+        <div class="ingr-group-label">Principal</div>
+        <div class="ingr-row"><span class="ingr-qty">350 g</span><span>fraise<span class="ingr-prep">, coupées</span></span></div>
+
+        <div class="ingr-group-label">Sablé</div>
+        <div class="ingr-row"><span class="ingr-qty">150 g</span><span>biscuit sablé<span class="ingr-prep">, émietté</span></span></div>
+        <div class="ingr-row"><span class="ingr-qty">110 g</span><span>beurre<span class="ingr-prep">, mou</span></span></div>
+        <div class="ingr-row"><span class="ingr-qty">1 pincée</span><span>cannelle</span></div>
+
+        <div class="ingr-group-label">Crème</div>
+        <div class="ingr-row"><span class="ingr-qty">250 g</span><span>mascarpone</span></div>
+        <div class="ingr-row"><span class="ingr-qty">2 c.s.</span><span>sucre</span></div>
+
+        <div class="ingr-group-label">Meringue</div>
+        <div class="ingr-row"><span class="ingr-qty">2 blancs</span><span>œuf</span></div>
+        <div class="ingr-row"><span class="ingr-qty">100 g</span><span>sucre</span></div>
+        <div class="ingr-row"><span class="ingr-qty">1 gousse</span><span>vanille</span></div>
+      </div>
+
+      <!-- PRÉPARATION -->
+      <div>
+        <div class="col-header">Préparation</div>
+
+        <div class="step-item">
+          <span class="step-num">01</span>
+          <div class="step-body">
+            <div class="step-title-row">
+              <span class="step-title">Meringue</span>
+              <span class="step-badge badge-time">30 min</span>
+              <span class="step-badge badge-temp">120°C</span>
+            </div>
+            <p class="step-desc">Chauffer sucre + vanille + 4 c.s. d'eau en sirop. Monter les blancs en l'incorporant. Étaler en 6 disques sur sulfurisé.</p>
+          </div>
+        </div>
+
+        <div class="step-item">
+          <span class="step-num">02</span>
+          <div class="step-body">
+            <div class="step-title-row">
+              <span class="step-title">Sablé</span>
+              <span class="step-badge badge-time">15 min</span>
+              <span class="step-badge badge-temp">180°C</span>
+            </div>
+            <p class="step-desc">Émietter biscuits + beurre + cannelle. Cuire 6–8 min. Refroidir, découper en 6 cercles.</p>
+          </div>
+        </div>
+
+        <div class="step-item">
+          <span class="step-num">03</span>
+          <div class="step-body">
+            <div class="step-title-row">
+              <span class="step-title">Crème</span>
+              <span class="step-badge badge-time">5 min</span>
+            </div>
+            <p class="step-desc">Mélanger mascarpone + sucre. Couper les fraises.</p>
+          </div>
+        </div>
+
+        <div class="step-item">
+          <span class="step-num">04</span>
+          <div class="step-body">
+            <div class="step-title-row">
+              <span class="step-title">Montage</span>
+              <span class="step-badge badge-time">10 min</span>
+            </div>
+            <p class="step-desc">Sablé dans un anneau → crème → fraises → disque de meringue. Décorer d'une fraise entière.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- NOTE -->
+      <div class="note-row">
+        <span class="note-label">Note</span>
+        <span class="note-text">À faire le jour même. Les composants peuvent être préparés la veille séparément.</span>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="spine"></div>
+
+  <!-- ══ PAGE DROITE — manuscrit + photos ══ -->
+  <div class="page-right">
+
+    <!-- Manuscrit de grand-mère -->
+    <div class="manuscript-zone">
+      <div class="manuscript-header">
+        <span class="manuscript-label">Manuscrit de famille</span>
+        <span class="manuscript-open">cliquer pour ouvrir ↗</span>
+      </div>
+
+      <a class="photo-link"
+         href="https://bxxuorvdntaggxmwqicm.supabase.co/storage/v1/object/public/recipes-pdfs/biscuits_meringues_aux_fraises_copie.pdf"
+         target="_blank" title="Ouvrir le manuscrit original">
+        <div class="photo-shadow"></div>
+        <div class="photo-inner">
+          <canvas id="pdf-thumb"></canvas>
+          <div id="pdf-fallback">
+            <span style="font-size:28px">📄</span>
+            <span>Recette manuscrite</span>
+          </div>
+        </div>
+      </a>
+
+      <div class="manuscript-caption">
+        <svg width="12" height="16" viewBox="0 0 12 16" fill="none">
+          <line x1="6" y1="15" x2="6" y2="2" stroke="rgba(110,79,138,0.55)" stroke-width="1"/>
+          <ellipse cx="3.8" cy="5.5" rx="2.2" ry="1.4" fill="rgba(150,115,185,0.6)" transform="rotate(-25 3.8 5.5)"/>
+          <ellipse cx="8.2" cy="7.5" rx="2.2" ry="1.4" fill="rgba(150,115,185,0.6)" transform="rotate(25 8.2 7.5)"/>
+          <ellipse cx="4"   cy="10"  rx="1.8" ry="1.2" fill="rgba(130,95,165,0.5)"  transform="rotate(-20 4 10)"/>
+        </svg>
+        recette de famille
+      </div>
+    </div>
+
+    <div class="divider-r"></div>
+
+    <!-- Zone photos plat -->
+    <div class="photos-zone">
+      <div class="photos-header">Photos du plat</div>
+      <div class="photos-grid">
+        <div class="photo-slot">
+          <span class="photo-slot-icon">🖼</span>
+          <span class="photo-slot-label">Ajouter une photo</span>
+        </div>
+        <div class="photo-slot">
+          <span class="photo-slot-icon">🖼</span>
+          <span class="photo-slot-label">Ajouter une photo</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="right-footer">
+      <div class="tags-row">
+        <span class="tag">fraise</span>
+        <span class="tag">meringue</span>
+        <span class="tag">mascarpone</span>
+        <span class="tag">estival</span>
+        <span class="tag">pâtisserie</span>
+      </div>
+      <span class="page-num-right">15</span>
+    </div>
+
+  </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+(function() {
+  const PDF = 'https://bxxuorvdntaggxmwqicm.supabase.co/storage/v1/object/public/recipes-pdfs/biscuits_meringues_aux_fraises_copie.pdf';
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  pdfjsLib.getDocument({ url: PDF }).promise
+    .then(p => p.getPage(1))
+    .then(page => {
+      const c = document.getElementById('pdf-thumb');
+      const container = c.closest('.photo-inner');
+      const availW = container.clientWidth - 8; // padding
+      const naturalVp = page.getViewport({ scale: 1 });
+      const scale = availW / naturalVp.width;
+      const vp = page.getViewport({ scale });
+      c.width = vp.width;
+      c.height = vp.height;
+      return page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
+    })
+    .catch(() => {
+      document.getElementById('pdf-fallback').style.display = 'flex';
+      document.getElementById('pdf-thumb').style.display = 'none';
+    });
+})();
+</script>
+</body>
+</html>

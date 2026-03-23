@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Démo C — Almanach Provençal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #1e2518;
+  background-image: radial-gradient(ellipse at center, #2a3220 0%, #111509 100%);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-family: 'DM Sans', sans-serif;
+  padding: 40px 20px;
+  gap: 16px;
+}
+
+.demo-label {
+  color: rgba(255,255,255,0.3);
+  font-size: 11px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.book {
+  display: flex;
+  width: 1080px;
+  height: 700px;
+  box-shadow: 0 60px 120px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.04);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.spine {
+  width: 16px;
+  background: linear-gradient(to right, #1a2010, #3a5028, #1a2010);
+  flex-shrink: 0;
+  z-index: 2;
+}
+
+/* ── PAGE GAUCHE ── */
+.page-left {
+  flex: 1;
+  background: #f5f0e4;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow-y: auto;
+}
+
+.cat-banner {
+  background: #5c7a4a;
+  padding: 14px 36px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.cat-banner-text {
+  font-size: 10px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.9);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+}
+
+/* SVG leaf ornament */
+.leaf-ornament {
+  opacity: 0.6;
+}
+
+.page-left-body {
+  padding: 28px 36px 40px;
+  flex: 1;
+}
+
+.recipe-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 28px;
+  color: #2d2d1e;
+  line-height: 1.15;
+  margin-bottom: 14px;
+}
+
+.meta-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+}
+
+.meta-pill {
+  font-size: 11px;
+  font-weight: 400;
+  color: #4a5a38;
+  background: rgba(92,122,74,0.1);
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 1px solid rgba(92,122,74,0.25);
+}
+
+.ingr-section-title {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: #5c7a4a;
+  display: block;
+  margin-bottom: 12px;
+}
+
+/* Séparateur de groupe avec losange */
+.ingr-group-sep {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0 6px;
+}
+
+.ingr-group-sep .sep-line {
+  flex: 1;
+  height: 1px;
+  background: rgba(92,122,74,0.2);
+}
+
+.ingr-group-sep .sep-diamond {
+  width: 6px;
+  height: 6px;
+  background: #c4923a;
+  transform: rotate(45deg);
+  flex-shrink: 0;
+}
+
+.ingr-group-title {
+  font-family: 'Caveat', cursive;
+  font-size: 15px;
+  font-weight: 600;
+  color: #c4923a;
+}
+
+.ingr-list { list-style: none; }
+
+.ingr-item {
+  display: flex;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 300;
+  color: #2d2d1e;
+  padding: 2px 0;
+  line-height: 1.6;
+}
+
+.ingr-qty {
+  min-width: 62px;
+  text-align: right;
+  color: #5c7a4a;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.ingr-prep {
+  color: #8a7a5a;
+  font-style: italic;
+}
+
+.notes-block {
+  margin-top: 16px;
+  background: rgba(92,122,74,0.07);
+  border-left: 3px solid rgba(92,122,74,0.4);
+  padding: 8px 12px;
+  border-radius: 0 3px 3px 0;
+}
+
+.notes-text {
+  font-family: 'Caveat', cursive;
+  font-size: 15px;
+  font-weight: 500;
+  color: #4a5a38;
+  line-height: 1.5;
+}
+
+.page-num {
+  position: absolute;
+  bottom: 18px;
+  font-family: 'DM Serif Display', serif;
+  font-style: italic;
+  font-size: 12px;
+  color: rgba(45,45,30,0.3);
+}
+.page-num-left { left: 36px; }
+.page-num-right { right: 36px; }
+
+/* ── PAGE DROITE ── */
+.page-right {
+  flex: 1;
+  background: #e8edd8;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+.page-right-header {
+  background: rgba(92,122,74,0.12);
+  border-bottom: 1px solid rgba(92,122,74,0.2);
+  padding: 14px 36px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.pdf-card-label {
+  font-family: 'Caveat', cursive;
+  font-size: 20px;
+  font-weight: 600;
+  color: #c4923a;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.pdf-card-sub {
+  font-size: 9px;
+  font-weight: 300;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(92,122,74,0.5);
+}
+
+.pdf-outer {
+  flex: 1;
+  padding: 24px 32px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  gap: 14px;
+}
+
+.pdf-border-frame {
+  flex: 1;
+  border: 2px solid #5c7a4a;
+  padding: 6px;
+  background: white;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.pdf-border-inner {
+  flex: 1;
+  border: 1px solid rgba(92,122,74,0.3);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.pdf-iframe {
+  flex: 1;
+  width: 100%;
+  border: none;
+  min-height: 0;
+}
+
+.tags-row {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.tag-pill {
+  font-size: 10px;
+  color: #4a5a38;
+  background: rgba(92,122,74,0.1);
+  padding: 3px 10px;
+  border-radius: 3px;
+  border: 1px solid rgba(92,122,74,0.2);
+}
+</style>
+</head>
+<body>
+
+<div class="demo-label">Direction C — Almanach Provençal</div>
+
+<div class="book">
+
+  <!-- PAGE GAUCHE -->
+  <div class="page-left">
+    <div class="cat-banner">
+      <span class="cat-banner-text">Dessert</span>
+      <!-- Leaf SVG ornament -->
+      <svg class="leaf-ornament" width="28" height="28" viewBox="0 0 28 28" fill="none">
+        <path d="M14 4 C14 4, 24 8, 24 18 C24 22, 20 25, 14 25 C8 25, 4 22, 4 18 C4 8, 14 4, 14 4Z" stroke="rgba(255,255,255,0.6)" stroke-width="1" fill="none"/>
+        <path d="M14 25 L14 10" stroke="rgba(255,255,255,0.5)" stroke-width="1"/>
+        <path d="M14 17 C14 17, 10 14, 8 12" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>
+        <path d="M14 20 C14 20, 18 17, 20 15" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>
+      </svg>
+    </div>
+
+    <div class="page-left-body">
+      <div class="recipe-title">Biscuits Meringués aux Fraises</div>
+      <div class="meta-row">
+        <span class="meta-pill">6 personnes</span>
+        <span class="meta-pill">Difficile</span>
+        <span class="meta-pill">40 min prép.</span>
+        <span class="meta-pill">20 min cuisson</span>
+      </div>
+
+      <span class="ingr-section-title">Ingrédients</span>
+
+      <div class="ingr-group-sep">
+        <div class="sep-line"></div>
+        <div class="sep-diamond"></div>
+        <span class="ingr-group-title">Principal</span>
+        <div class="sep-line"></div>
+      </div>
+      <ul class="ingr-list">
+        <li class="ingr-item"><span class="ingr-qty">350 g</span><span>fraise<span class="ingr-prep">, coupées</span></span></li>
+      </ul>
+
+      <div class="ingr-group-sep">
+        <div class="sep-line"></div>
+        <div class="sep-diamond"></div>
+        <span class="ingr-group-title">Sablé</span>
+        <div class="sep-line"></div>
+      </div>
+      <ul class="ingr-list">
+        <li class="ingr-item"><span class="ingr-qty">150 g</span><span>petit brun<span class="ingr-prep">, émiettés</span></span></li>
+        <li class="ingr-item"><span class="ingr-qty">1 pincée</span><span>cannelle</span></li>
+        <li class="ingr-item"><span class="ingr-qty">110 g</span><span>beurre<span class="ingr-prep">, mou</span></span></li>
+      </ul>
+
+      <div class="ingr-group-sep">
+        <div class="sep-line"></div>
+        <div class="sep-diamond"></div>
+        <span class="ingr-group-title">Crème</span>
+        <div class="sep-line"></div>
+      </div>
+      <ul class="ingr-list">
+        <li class="ingr-item"><span class="ingr-qty">250 g</span><span>mascarpone</span></li>
+        <li class="ingr-item"><span class="ingr-qty">2 c.s.</span><span>sucre en poudre</span></li>
+      </ul>
+
+      <div class="ingr-group-sep">
+        <div class="sep-line"></div>
+        <div class="sep-diamond"></div>
+        <span class="ingr-group-title">Meringue</span>
+        <div class="sep-line"></div>
+      </div>
+      <ul class="ingr-list">
+        <li class="ingr-item"><span class="ingr-qty">2 blancs</span><span>œuf<span class="ingr-prep">, en neige ferme</span></span></li>
+        <li class="ingr-item"><span class="ingr-qty">100 g</span><span>sucre en poudre<span class="ingr-prep">, pour sirop</span></span></li>
+        <li class="ingr-item"><span class="ingr-qty">1 gousse</span><span>vanille</span></li>
+      </ul>
+
+      <div class="notes-block">
+        <span class="notes-text">À faire le jour même. Les composants (meringue, sablé, crème) peuvent être préparés la veille séparément.</span>
+      </div>
+    </div>
+
+    <span class="page-num page-num-left">1</span>
+  </div>
+
+  <div class="spine"></div>
+
+  <!-- PAGE DROITE -->
+  <div class="page-right">
+    <div class="page-right-header">
+      <span class="pdf-card-label">La recette de famille ✦</span>
+      <span class="pdf-card-sub">manuscrit original</span>
+    </div>
+
+    <div class="pdf-outer">
+      <div class="pdf-border-frame">
+        <div class="pdf-border-inner">
+          <iframe
+            class="pdf-iframe"
+            src="https://bxxuorvdntaggxmwqicm.supabase.co/storage/v1/object/public/recipes-pdfs/biscuits_meringues_aux_fraises_copie.pdf"
+            title="Manuscrit original">
+          </iframe>
+        </div>
+      </div>
+      <div class="tags-row">
+        <span class="tag-pill">fraise</span>
+        <span class="tag-pill">meringue</span>
+        <span class="tag-pill">mascarpone</span>
+        <span class="tag-pill">estival</span>
+        <span class="tag-pill">pâtisserie</span>
+      </div>
+    </div>
+
+    <span class="page-num page-num-right">2</span>
+  </div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Démo 1 — Mémoire Chaude</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root {
+  --cream: #f7f2e8;
+  --parchment: #efe8d8;
+  --ink: #2a1f14;
+  --ink-mid: #6b5540;
+  --ink-light: #a89070;
+  --accent: #9b3a2e;
+  --amber: #c4923a;
+  --tape: rgba(210,185,140,0.72);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #100c06;
+  background-image:
+    radial-gradient(ellipse 80% 60% at 50% 0%, #2a1a08 0%, transparent 70%),
+    radial-gradient(ellipse 60% 80% at 80% 100%, #1a1204 0%, transparent 70%);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  gap: 20px;
+}
+
+.demo-label {
+  color: rgba(255,255,255,0.22);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+}
+
+/* ── BOOK ── */
+.book {
+  display: flex;
+  width: 1080px;
+  height: 700px;
+  position: relative;
+  border-radius: 2px;
+  filter: drop-shadow(0 50px 100px rgba(0,0,0,0.85));
+}
+
+/* Spine shadow on pages */
+.book::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 100%;
+  background: linear-gradient(to right, rgba(0,0,0,0.35) 0%, transparent 40%, transparent 60%, rgba(0,0,0,0.25) 100%);
+  z-index: 3;
+  pointer-events: none;
+}
+
+/* ── PAGE GAUCHE ── */
+.page-left {
+  flex: 1;
+  background: var(--cream);
+  background-image:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      transparent 31px,
+      rgba(42,31,20,0.06) 31px,
+      rgba(42,31,20,0.06) 32px
+    );
+  padding: 44px 44px 44px 50px;
+  overflow-y: auto;
+  position: relative;
+  /* Slight edge darkening */
+  box-shadow: inset -8px 0 20px rgba(0,0,0,0.06), inset 0 -6px 20px rgba(0,0,0,0.04);
+}
+
+/* Vertical red margin line */
+.page-left::before {
+  content: '';
+  position: absolute;
+  left: 42px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(155,58,46,0.15);
+  pointer-events: none;
+}
+
+.recipe-meta-top {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.recipe-cat {
+  font-family: 'Caveat', cursive;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 0.03em;
+}
+
+.recipe-cat-sep {
+  width: 20px;
+  height: 1px;
+  background: rgba(155,58,46,0.3);
+  flex-shrink: 0;
+  position: relative;
+  top: -4px;
+}
+
+.recipe-source {
+  font-family: 'Caveat', cursive;
+  font-size: 14px;
+  color: var(--ink-light);
+  font-style: italic;
+}
+
+.recipe-title {
+  font-family: 'DM Serif Display', serif;
+  font-style: italic;
+  font-size: 32px;
+  color: var(--ink);
+  line-height: 1.1;
+  margin-bottom: 18px;
+  letter-spacing: -0.01em;
+}
+
+.meta-pills {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid rgba(42,31,20,0.1);
+}
+
+.pill {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 10.5px;
+  font-weight: 400;
+  color: var(--ink-mid);
+  background: rgba(42,31,20,0.05);
+  border: 1px solid rgba(42,31,20,0.12);
+  padding: 3px 10px;
+  border-radius: 30px;
+}
+
+/* Ingrédients */
+.ingr-header {
+  font-family: 'Caveat', cursive;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+  display: block;
+  margin-bottom: 10px;
+}
+
+.ingr-group {
+  margin-bottom: 6px;
+}
+
+.ingr-group-label {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 9.5px;
+  font-weight: 500;
+  color: var(--amber);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 5px;
+}
+
+.ingr-group-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(196,146,58,0.25);
+}
+
+.ingr-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12.5px;
+  font-weight: 300;
+  color: var(--ink);
+  line-height: 1.65;
+}
+
+.ingr-qty {
+  min-width: 66px;
+  text-align: right;
+  color: var(--ink-mid);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  padding-right: 10px;
+  flex-shrink: 0;
+}
+
+.ingr-prep {
+  color: var(--ink-light);
+  font-style: italic;
+}
+
+/* Note manuscrite */
+.note-card {
+  margin-top: 18px;
+  background: #fdf9ef;
+  border: 1px solid rgba(196,146,58,0.2);
+  padding: 10px 14px;
+  position: relative;
+  transform: rotate(-0.3deg);
+  box-shadow: 1px 2px 6px rgba(0,0,0,0.06);
+}
+
+.note-card::before {
+  content: 'note';
+  font-family: 'Caveat', cursive;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--amber);
+  text-transform: lowercase;
+  letter-spacing: 0.1em;
+  position: absolute;
+  top: -8px;
+  left: 10px;
+  background: #fdf9ef;
+  padding: 0 4px;
+}
+
+.note-text {
+  font-family: 'Caveat', cursive;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink-mid);
+  line-height: 1.55;
+}
+
+.page-num-left {
+  position: absolute;
+  bottom: 18px;
+  left: 50px;
+  font-family: 'DM Serif Display', serif;
+  font-style: italic;
+  font-size: 11px;
+  color: rgba(42,31,20,0.28);
+}
+
+/* ── PAGE DROITE ── */
+.page-right {
+  flex: 1;
+  background: var(--parchment);
+  background-image:
+    radial-gradient(ellipse 60% 40% at 80% 20%, rgba(196,146,58,0.06) 0%, transparent 70%);
+  padding: 44px 50px 44px 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  position: relative;
+  box-shadow: inset 8px 0 20px rgba(0,0,0,0.04);
+}
+
+/* Coffee ring stain (décoratif) */
+.page-right::before {
+  content: '';
+  position: absolute;
+  bottom: 60px;
+  right: 50px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(130,90,50,0.09);
+  box-shadow:
+    inset 0 0 0 6px rgba(255,255,255,0),
+    0 0 0 5px rgba(130,90,50,0.05);
+  pointer-events: none;
+}
+
+/* Photo collée */
+.photo-link {
+  display: block;
+  text-decoration: none;
+  position: relative;
+  cursor: pointer;
+}
+
+.photo-wrapper {
+  background: white;
+  padding: 9px 9px 30px;
+  box-shadow:
+    0 8px 30px rgba(0,0,0,0.18),
+    0 2px 6px rgba(0,0,0,0.1);
+  transform: rotate(-1.8deg);
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.35s ease;
+  position: relative;
+}
+
+.photo-link:hover .photo-wrapper {
+  transform: rotate(-0.5deg) scale(1.03);
+  box-shadow: 0 18px 50px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.14);
+}
+
+/* Washi tape gauche */
+.tape-left {
+  position: absolute;
+  top: -9px;
+  left: 20px;
+  width: 52px;
+  height: 20px;
+  background: var(--tape);
+  background-image: repeating-linear-gradient(
+    90deg,
+    transparent 0px,
+    transparent 4px,
+    rgba(255,255,255,0.12) 4px,
+    rgba(255,255,255,0.12) 5px
+  );
+  transform: rotate(-3deg);
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* Washi tape droite */
+.tape-right {
+  position: absolute;
+  top: -7px;
+  right: 20px;
+  width: 52px;
+  height: 20px;
+  background: var(--tape);
+  background-image: repeating-linear-gradient(
+    90deg,
+    transparent 0px,
+    transparent 4px,
+    rgba(255,255,255,0.12) 4px,
+    rgba(255,255,255,0.12) 5px
+  );
+  transform: rotate(2.5deg);
+  z-index: 10;
+  pointer-events: none;
+}
+
+#pdf-thumb {
+  display: block;
+  width: 270px;
+  height: auto;
+  max-height: 380px;
+  object-fit: cover;
+}
+
+#pdf-fallback {
+  display: none;
+  width: 270px;
+  height: 340px;
+  background: #f8f4ee;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--ink-light);
+  font-family: 'Caveat', cursive;
+  font-size: 16px;
+  text-align: center;
+  padding: 20px;
+  border: 1px dashed rgba(42,31,20,0.12);
+}
+
+.photo-caption {
+  position: absolute;
+  bottom: 4px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-family: 'Caveat', cursive;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-light);
+  letter-spacing: 0.02em;
+}
+
+.photo-open-hint {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 9.5px;
+  color: rgba(107,85,64,0.4);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.tags-block {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+}
+
+.tag {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 9.5px;
+  color: var(--ink-mid);
+  background: rgba(42,31,20,0.06);
+  border: 1px solid rgba(42,31,20,0.1);
+  padding: 3px 9px;
+  border-radius: 30px;
+}
+
+.page-num-right {
+  position: absolute;
+  bottom: 18px;
+  right: 50px;
+  font-family: 'DM Serif Display', serif;
+  font-style: italic;
+  font-size: 11px;
+  color: rgba(42,31,20,0.28);
+}
+</style>
+</head>
+<body>
+
+<div class="demo-label">Direction 1 — Mémoire Chaude</div>
+
+<div class="book">
+
+  <!-- PAGE GAUCHE -->
+  <div class="page-left">
+    <div class="recipe-meta-top">
+      <span class="recipe-cat">Dessert</span>
+      <div class="recipe-cat-sep"></div>
+      <span class="recipe-source">recette de famille</span>
+    </div>
+
+    <div class="recipe-title">Biscuits Meringués<br>aux Fraises</div>
+
+    <div class="meta-pills">
+      <span class="pill">6 personnes</span>
+      <span class="pill">Difficile</span>
+      <span class="pill">Prép. 40 min</span>
+      <span class="pill">Cuisson 20 min</span>
+    </div>
+
+    <span class="ingr-header">Ingrédients</span>
+
+    <div class="ingr-group">
+      <div class="ingr-group-label">Principal</div>
+      <div class="ingr-row"><span class="ingr-qty">350 g</span><span>fraise<span class="ingr-prep">, coupées</span></span></div>
+    </div>
+
+    <div class="ingr-group">
+      <div class="ingr-group-label">Sablé</div>
+      <div class="ingr-row"><span class="ingr-qty">150 g</span><span>petit brun<span class="ingr-prep">, émiettés</span></span></div>
+      <div class="ingr-row"><span class="ingr-qty">1 pincée</span><span>cannelle</span></div>
+      <div class="ingr-row"><span class="ingr-qty">110 g</span><span>beurre<span class="ingr-prep">, mou</span></span></div>
+    </div>
+
+    <div class="ingr-group">
+      <div class="ingr-group-label">Crème</div>
+      <div class="ingr-row"><span class="ingr-qty">250 g</span><span>mascarpone</span></div>
+      <div class="ingr-row"><span class="ingr-qty">2 c.s.</span><span>sucre en poudre</span></div>
+    </div>
+
+    <div class="ingr-group">
+      <div class="ingr-group-label">Meringue</div>
+      <div class="ingr-row"><span class="ingr-qty">2 blancs</span><span>œuf<span class="ingr-prep">, en neige ferme</span></span></div>
+      <div class="ingr-row"><span class="ingr-qty">100 g</span><span>sucre en poudre<span class="ingr-prep">, pour sirop</span></span></div>
+      <div class="ingr-row"><span class="ingr-qty">1 gousse</span><span>vanille</span></div>
+    </div>
+
+    <div class="note-card">
+      <span class="note-text">À faire le jour même. Les composants (meringue, sablé, crème) peuvent être préparés la veille séparément.</span>
+    </div>
+
+    <span class="page-num-left">1</span>
+  </div>
+
+  <!-- PAGE DROITE -->
+  <div class="page-right">
+
+    <a class="photo-link" href="https://bxxuorvdntaggxmwqicm.supabase.co/storage/v1/object/public/recipes-pdfs/biscuits_meringues_aux_fraises_copie.pdf" target="_blank" title="Ouvrir la recette originale">
+      <div class="tape-left"></div>
+      <div class="tape-right"></div>
+      <div class="photo-wrapper">
+        <canvas id="pdf-thumb"></canvas>
+        <div id="pdf-fallback">
+          <span>📄</span>
+          <span>Recette originale</span>
+        </div>
+        <div class="photo-caption">biscuits aux fraises</div>
+      </div>
+    </a>
+
+    <div class="photo-open-hint">cliquer pour ouvrir ↗</div>
+
+    <div class="tags-block">
+      <span class="tag">fraise</span>
+      <span class="tag">meringue</span>
+      <span class="tag">mascarpone</span>
+      <span class="tag">estival</span>
+      <span class="tag">pâtisserie</span>
+    </div>
+
+    <span class="page-num-right">2</span>
+  </div>
+
+</div>
+
+<!-- PDF.js pour le rendu de la première page -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+(function() {
+  const PDF_URL = 'https://bxxuorvdntaggxmwqicm.supabase.co/storage/v1/object/public/recipes-pdfs/biscuits_meringues_aux_fraises_copie.pdf';
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+  pdfjsLib.getDocument({ url: PDF_URL }).promise
+    .then(pdf => pdf.getPage(1))
+    .then(page => {
+      const canvas = document.getElementById('pdf-thumb');
+      const scale = 0.75;
+      const viewport = page.getViewport({ scale });
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      return page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+    })
+    .catch(err => {
+      console.warn('PDF render:', err);
+      document.getElementById('pdf-fallback').style.display = 'flex';
+      document.getElementById('pdf-thumb').style.display = 'none';
+    });
+})();
+</script>
+
+</body>
+</html>

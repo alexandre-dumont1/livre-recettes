@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Le Livre de Recettes</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500&family=Caveat:wght@500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -21,8 +21,10 @@
       <button class="cat-btn" data-cat="2" aria-pressed="false">Plats</button>
       <button class="cat-btn" data-cat="3" aria-pressed="false">Poissons</button>
       <button class="cat-btn" data-cat="4" aria-pressed="false">Desserts</button>
+      <button class="cat-btn" data-cat="fav" aria-pressed="false">★ Favoris</button>
     </nav>
     <div class="page-counter" id="pageCounter" aria-live="polite" aria-label="Position dans le livre">— / —</div>
+    <button class="submit-btn" onclick="openSubmit()" aria-haspopup="dialog" aria-label="Proposer une recette">+ Recette</button>
   </div>
 </header>
 
@@ -60,6 +62,55 @@
   </div>
 </div>
 
+<div class="submit-overlay" id="submitOverlay" role="dialog" aria-modal="true" aria-label="Proposer une recette" onclick="closeSubmitOutside(event)">
+  <div class="submit-panel">
+    <div class="submit-panel-header">
+      <div>
+        <div class="submit-panel-title">Proposer une recette</div>
+        <div class="submit-panel-subtitle">Elle sera relue et ajoutée au livre par l'administrateur.</div>
+      </div>
+      <button class="submit-close" onclick="closeSubmit()" aria-label="Fermer">Fermer ✕</button>
+    </div>
+    <form class="submit-form" onsubmit="submitRecipe(event)">
+      <div class="submit-field">
+        <label class="submit-label" for="sf-title">Nom de la recette *</label>
+        <input class="submit-input" id="sf-title" type="text" required placeholder="Ex : Tarte aux pommes de mamie">
+      </div>
+      <div class="submit-field">
+        <label class="submit-label" for="sf-cat">Catégorie</label>
+        <select class="submit-select" id="sf-cat">
+          <option value="">— Choisir —</option>
+          <option value="1">Entrée</option>
+          <option value="2">Plat</option>
+          <option value="3">Poisson</option>
+          <option value="4">Dessert</option>
+          <option value="5">Gibier</option>
+          <option value="6">Accompagnement</option>
+        </select>
+      </div>
+      <div class="submit-field">
+        <label class="submit-label" for="sf-author">Ton prénom</label>
+        <input class="submit-input" id="sf-author" type="text" placeholder="Ex : Tante Marie">
+      </div>
+      <div class="submit-field">
+        <label class="submit-label" for="sf-ingredients">Ingrédients</label>
+        <textarea class="submit-textarea" id="sf-ingredients" rows="4" placeholder="Un par ligne :&#10;200g beurre&#10;3 œufs&#10;…"></textarea>
+      </div>
+      <div class="submit-field">
+        <label class="submit-label" for="sf-steps">Préparation</label>
+        <textarea class="submit-textarea" id="sf-steps" rows="5" placeholder="Décris les étapes de la recette…"></textarea>
+      </div>
+      <div class="submit-field">
+        <label class="submit-label" for="sf-notes">Notes (optionnel)</label>
+        <textarea class="submit-textarea" id="sf-notes" rows="2" placeholder="Conseils, variantes, souvenirs…"></textarea>
+      </div>
+      <div id="submitFeedback" class="submit-feedback" aria-live="polite"></div>
+      <button type="submit" class="submit-form-btn">Envoyer la recette</button>
+    </form>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="config.js"></script>
 <script src="app.js"></script>
 </body>

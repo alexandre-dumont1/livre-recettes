@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Démo 3 — Cahier Quadrillé</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #f9f6ee;
+  --paper-r: #f4f0e4;
+  --grid: rgba(100,130,200,0.1);
+  --red-line: rgba(220,80,60,0.18);
+  --ink: #1a1a2a;
+  --ink-mid: #5a5a7a;
+  --ink-light: #9090b0;
+  --red: #c04030;
+  --blue: #2a4880;
+  --orange: #d4723a;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #1a1208;
+  background-image:
+    radial-gradient(ellipse 80% 60% at 30% 30%, #2a1a0a 0%, transparent 70%),
+    radial-gradient(ellipse 60% 80% at 70% 80%, #120e04 0%, transparent 70%);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  gap: 20px;
+}
+
+.demo-label {
+  color: rgba(255,255,255,0.2);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+}
+
+.book {
+  display: flex;
+  width: 1080px;
+  height: 700px;
+  filter: drop-shadow(0 50px 100px rgba(0,0,0,0.85));
+  position: relative;
+}
+
+/* Ligne de reliure spirale simulée */
+.book::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: 20px;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 12px,
+    #2a1a0a 12px,
+    #2a1a0a 22px
+  );
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* ── PAGE GAUCHE ── */
+.page-left {
+  flex: 1;
+  position: relative;
+  overflow-y: auto;
+  /* Fond quadrillé */
+  background-color: var(--paper);
+  background-image:
+    /* Grid carreau */
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px),
+    /* Ligne rouge de marge */
+    linear-gradient(90deg, transparent 44px, var(--red-line) 44px, var(--red-line) 46px, transparent 46px);
+  background-size:
+    20px 20px,
+    20px 20px,
+    100% 100%;
+  box-shadow: inset -6px 0 16px rgba(0,0,0,0.06);
+}
+
+.page-left-inner {
+  padding: 36px 36px 44px 56px;
+}
+
+/* Trou de reliure gauche */
+.binding-holes {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 42px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-evenly;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.hole {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #1a1208;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.5);
+}
+
+.recipe-header-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.recipe-cat {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--blue);
+  padding: 2px 8px;
+  border: 1.5px solid rgba(42,72,128,0.3);
+}
+
+.recipe-date {
+  font-family: 'Caveat', cursive;
+  font-size: 14px;
+  color: var(--ink-light);
+}
+
+.recipe-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 34px;
+  color: var(--ink);
+  line-height: 1.05;
+  margin-bottom: 4px;
+  letter-spacing: -0.02em;
+}
+
+.recipe-underline {
+  width: 100%;
+  height: 2px;
+  background: var(--red);
+  margin-bottom: 18px;
+  opacity: 0.5;
+}
+
+.meta-inline {
+  display: flex;
+  gap: 18px;
+  margin-bottom: 20px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 300;
+  color: var(--ink-mid);
+}
+
+.meta-inline strong {
+  font-weight: 500;
+  color: var(--ink);
+}
+
+/* Ingrédients style "liste de course" */
+.ingr-section-header {
+  font-family: 'Caveat', cursive;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--blue);
+  margin-bottom: 8px;
+  display: block;
+  /* Simuler un soulignement au stylo */
+  border-bottom: 2px solid rgba(42,72,128,0.2);
+  padding-bottom: 2px;
+  width: fit-content;
+}
+
+.ingr-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 24px;
+}
+
+.ingr-group-title {
+  font-family: 'Caveat', cursive;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--orange);
+  margin: 10px 0 3px;
+  display: block;
+}
+
+.ingr-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12.5px;
+  font-weight: 300;
+  color: var(--ink);
+  line-height: 1.7;
+  position: relative;
+}
+
+/* Check box manuscrit */
+.ingr-row::before {
+  content: '□';
+  font-size: 10px;
+  color: rgba(42,72,128,0.4);
+  margin-right: 6px;
+  flex-shrink: 0;
+  line-height: 1.7;
+}
+
+.ingr-qty {
+  min-width: 56px;
+  text-align: right;
+  padding-right: 8px;
+  color: var(--ink-mid);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.ingr-prep {
+  color: var(--ink-light);
+  font-style: italic;
+}
+
+/* Note manuscrite sur post-it */
+.sticky-note {
+  position: absolute;
+  bottom: 44px;
+  right: 36px;
+  width: 140px;
+  background: #fef9c3;
+  padding: 10px 12px;
+  transform: rotate(2.5deg);
+  box-shadow: 2px 3px 8px rgba(0,0,0,0.12);
+}
+
+.sticky-note::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: rgba(0,0,0,0.06);
+}
+
+.sticky-text {
+  font-family: 'Caveat', cursive;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #4a4020;
+  line-height: 1.4;
+}
+
+.page-num-left {
+  position: absolute;
+  bottom: 14px;
+  left: 56px;
+  font-family: 'Caveat', cursive;
+  font-size: 14px;
+  color: rgba(42,72,128,0.4);
+}
+
+/* ── PAGE DROITE ── */
+.page-right {
+  flex: 1;
+  background-color: var(--paper-r);
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 20px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  position: relative;
+  box-shadow: inset 6px 0 16px rgba(0,0,0,0.04);
+}
+
+/* Petite annotation en haut de la page droite */
+.right-annotation {
+  position: absolute;
+  top: 30px;
+  left: 30px;
+  font-family: 'Caveat', cursive;
+  font-size: 14px;
+  color: rgba(192,64,48,0.5);
+  transform: rotate(-1.5deg);
+}
+
+/* Drawing pin / punaise */
+.pin-container {
+  position: relative;
+  z-index: 1;
+}
+
+.pin {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.pin-head {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #e05030, #9a2818);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.pin-needle {
+  width: 1.5px;
+  height: 10px;
+  background: linear-gradient(to bottom, #b0a090, #7a6a58);
+}
+
+.photo-link {
+  display: block;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.photo-frame {
+  background: white;
+  padding: 6px 6px 20px;
+  box-shadow:
+    0 6px 24px rgba(0,0,0,0.15),
+    0 2px 6px rgba(0,0,0,0.08);
+  transform: rotate(1.5deg);
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s ease;
+  position: relative;
+}
+
+.photo-link:hover .photo-frame {
+  transform: rotate(0.3deg) scale(1.03);
+  box-shadow: 0 16px 48px rgba(0,0,0,0.25), 0 4px 12px rgba(0,0,0,0.12);
+}
+
+/* Lignes de cahier sur la partie blanche en bas */
+.photo-frame::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 6px;
+  right: 6px;
+  height: 20px;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 5px,
+    rgba(100,130,200,0.12) 5px,
+    rgba(100,130,200,0.12) 6px
+  );
+  pointer-events: none;
+}
+
+#pdf-thumb {
+  display: block;
+  width: 255px;
+  height: auto;
+  max-height: 350px;
+}
+
+#pdf-fallback {
+  display: none;
+  width: 255px;
+  height: 320px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 8px;
+  background: #f0ebe0;
+  color: var(--ink-mid);
+  font-family: 'Caveat', cursive;
+  font-size: 15px;
+  text-align: center;
+}
+
+.photo-caption-area {
+  font-family: 'Caveat', cursive;
+  font-size: 13px;
+  color: var(--ink-light);
+  text-align: center;
+}
+
+.photo-open-hint {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 9px;
+  color: rgba(42,72,128,0.3);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.tags-block {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+}
+
+.tag {
+  font-family: 'Caveat', cursive;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(42,72,128,0.6);
+  padding: 0 8px;
+  border-bottom: 1.5px solid rgba(42,72,128,0.2);
+}
+
+.page-num-right {
+  position: absolute;
+  bottom: 14px;
+  right: 36px;
+  font-family: 'Caveat', cursive;
+  font-size: 14px;
+  color: rgba(42,72,128,0.35);
+}
+</style>
+</head>
+<body>
+
+<div class="demo-label">Direction 3 — Cahier Quadrillé</div>
+
+<div class="book">
+
+  <!-- PAGE GAUCHE -->
+  <div class="page-left">
+    <div class="binding-holes">
+      <div class="hole"></div>
+      <div class="hole"></div>
+      <div class="hole"></div>
+      <div class="hole"></div>
+    </div>
+
+    <div class="page-left-inner">
+      <div class="recipe-header-row">
+        <span class="recipe-cat">Dessert</span>
+        <span class="recipe-date">recette de famille</span>
+      </div>
+
+      <div class="recipe-title">Biscuits Meringués<br>aux Fraises</div>
+      <div class="recipe-underline"></div>
+
+      <div class="meta-inline">
+        <span><strong>6</strong> personnes</span>
+        <span><strong>Difficile</strong></span>
+        <span><strong>40</strong> min prép.</span>
+        <span><strong>20</strong> min cuisson</span>
+      </div>
+
+      <span class="ingr-section-header">Ingrédients</span>
+
+      <div class="ingr-cols">
+        <div>
+          <span class="ingr-group-title">Principal</span>
+          <div class="ingr-row"><span class="ingr-qty">350 g</span><span>fraise<span class="ingr-prep">, coupées</span></span></div>
+
+          <span class="ingr-group-title">Crème</span>
+          <div class="ingr-row"><span class="ingr-qty">250 g</span><span>mascarpone</span></div>
+          <div class="ingr-row"><span class="ingr-qty">2 c.s.</span><span>sucre</span></div>
+        </div>
+        <div>
+          <span class="ingr-group-title">Sablé</span>
+          <div class="ingr-row"><span class="ingr-qty">150 g</span><span>biscuit sablé</span></div>
+          <div class="ingr-row"><span class="ingr-qty">110 g</span><span>beurre<span class="ingr-prep">, mou</span></span></div>
+          <div class="ingr-row"><span class="ingr-qty">1 pincée</span><span>cannelle</span></div>
+
+          <span class="ingr-group-title">Meringue</span>
+          <div class="ingr-row"><span class="ingr-qty">2 blancs</span><span>œuf</span></div>
+          <div class="ingr-row"><span class="ingr-qty">100 g</span><span>sucre</span></div>
+          <div class="ingr-row"><span class="ingr-qty">1 gousse</span><span>vanille</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Post-it note -->
+    <div class="sticky-note">
+      <span class="sticky-text">À faire le jour même ! Composants peuvent se préparer la veille.</span>
+    </div>
+
+    <span class="page-num-left">1</span>
+  </div>
+
+  <!-- PAGE DROITE -->
+  <div class="page-right">
+
+    <span class="right-annotation">voir recette originale →</span>
+
+    <div class="pin-container">
+      <div class="pin">
+        <div class="pin-head"></div>
+        <div class="pin-needle"></div>
+      </div>
+
+      <a class="photo-link" href="https://bxxuorvdntaggxmwqicm.supabase.co/storage/v1/object/public/recipes-pdfs/biscuits_meringues_aux_fraises_copie.pdf" target="_blank" title="Ouvrir la recette originale">
+        <div class="photo-frame">
+          <canvas id="pdf-thumb"></canvas>
+          <div id="pdf-fallback">
+            <span>📄</span>
+            <span>Recette originale</span>
+          </div>
+        </div>
+      </a>
+    </div>
+
+    <div class="photo-caption-area">biscuits meringués aux fraises</div>
+    <span class="photo-open-hint">cliquer pour ouvrir ↗</span>
+
+    <div class="tags-block">
+      <span class="tag">#fraise</span>
+      <span class="tag">#meringue</span>
+      <span class="tag">#mascarpone</span>
+      <span class="tag">#estival</span>
+    </div>
+
+    <span class="page-num-right">2</span>
+  </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+(function() {
+  const PDF_URL = 'https://bxxuorvdntaggxmwqicm.supabase.co/storage/v1/object/public/recipes-pdfs/biscuits_meringues_aux_fraises_copie.pdf';
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+  pdfjsLib.getDocument({ url: PDF_URL }).promise
+    .then(pdf => pdf.getPage(1))
+    .then(page => {
+      const canvas = document.getElementById('pdf-thumb');
+      const scale = 0.72;
+      const viewport = page.getViewport({ scale });
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      return page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+    })
+    .catch(err => {
+      document.getElementById('pdf-fallback').style.display = 'flex';
+      document.getElementById('pdf-thumb').style.display = 'none';
+    });
+})();
+</script>
+
+</body>
+</html>
