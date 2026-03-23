@@ -219,6 +219,27 @@ function openFromGallery(i) {
   showPage(i);
 }
 
+// ── AJUSTEUR DE PORTIONS ──────────────────────────────────────────────────────
+
+function scaleIngredients(mult, btn) {
+  // Toggle la classe active sur les boutons
+  const scaler = btn.closest('.serving-scaler');
+  scaler.querySelectorAll('.serving-btn').forEach(b => b.classList.remove('serving-btn--active'));
+  btn.classList.add('serving-btn--active');
+
+  // Met à jour chaque quantité ayant un data-base numérique
+  document.querySelectorAll('#pageLeft .ingr-qty[data-base]').forEach(el => {
+    const base = parseFloat(el.dataset.base);
+    const unit = el.dataset.unit || '';
+    if (isNaN(base)) return;
+    const val = base * mult;
+    // Arrondi intelligent : entiers sans décimale, sinon max 2 décimales
+    const rounded = Math.round(val * 100) / 100;
+    const display = Number.isInteger(rounded) ? String(rounded) : String(rounded);
+    el.textContent = unit ? display + '\u202f' + unit : display;
+  });
+}
+
 // ── RENDER FUNCTIONS ──────────────────────────────────────────────────────────
 
 async function renderLeft(recipe) {
@@ -243,8 +264,12 @@ async function renderLeft(recipe) {
     groups[g].forEach(i => {
       const qty = [i.quantity, i.unit].filter(Boolean).join('\u202f');
       const prep = i.preparation ? `<span class="ingr-prep">, ${i.preparation}</span>` : '';
+      // data-base stocke la partie numérique pour l'ajusteur de portions
+      const numericBase = i.quantity !== null && i.quantity !== '' && !isNaN(parseFloat(i.quantity))
+        ? parseFloat(i.quantity) : '';
+      const dataBase = numericBase !== '' ? ` data-base="${numericBase}" data-unit="${(i.unit || '').replace(/"/g, '&quot;')}"` : '';
       ingrHTML += `<div class="ingr-row">
-        <span class="ingr-qty">${qty}</span>
+        <span class="ingr-qty"${dataBase}>${qty}</span>
         <span>${i.ingredients?.name || ''}${prep}</span>
       </div>`;
     });
@@ -298,6 +323,13 @@ async function renderLeft(recipe) {
       <div class="souleiado"></div>
     </div>
     ${metaHTML ? `<div class="meta-row">${metaHTML}</div>` : ''}
+    <div class="serving-scaler" role="group" aria-label="Ajuster les portions">
+      <span class="serving-label">Portions :</span>
+      <button class="serving-btn" data-mult="0.5" onclick="scaleIngredients(0.5, this)">½</button>
+      <button class="serving-btn serving-btn--active" data-mult="1" onclick="scaleIngredients(1, this)">×1</button>
+      <button class="serving-btn" data-mult="2" onclick="scaleIngredients(2, this)">×2</button>
+      <button class="serving-btn" data-mult="3" onclick="scaleIngredients(3, this)">×3</button>
+    </div>
     <div class="recipe-body">
       <div>
         <div class="col-header">Ingrédients</div>
