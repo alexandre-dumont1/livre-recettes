@@ -76,9 +76,23 @@ function titleSize(title) {
 }
 
 function twoToneTitle(title) {
-  const idx = title.lastIndexOf(' ');
-  if (idx === -1) return title;
-  return `${title.slice(0, idx)} <span class="title-accent">${title.slice(idx + 1)}</span>`;
+  const words = title.split(' ');
+  if (words.length === 1) return title;
+
+  const total = title.replace(/ /g, '').length;
+  const target = total * 0.35;
+
+  let best = words.length - 1;
+  let bestDiff = Infinity;
+  for (let i = 1; i < words.length; i++) {
+    const amberLen = words.slice(i).join('').length;
+    const diff = Math.abs(amberLen - target);
+    if (diff < bestDiff) { bestDiff = diff; best = i; }
+  }
+
+  const before = words.slice(0, best).join(' ');
+  const amber  = words.slice(best).join(' ');
+  return `${before} <span class="title-accent">${amber}</span>`;
 }
 
 // ── FAVORIS ──────────────────────────────────────────────────────────────────
