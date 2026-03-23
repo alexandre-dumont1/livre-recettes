@@ -231,6 +231,7 @@ body {
   word-break: break-word;
   flex-shrink: 0;
 }
+.title-accent { color: #C4782A; }
 
 /* Source + ligne Souleiado */
 .recipe-meta-line {

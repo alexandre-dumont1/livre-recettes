@@ -75,6 +75,12 @@ function titleSize(title) {
   return '72px';
 }
 
+function twoToneTitle(title) {
+  const idx = title.lastIndexOf(' ');
+  if (idx === -1) return title;
+  return `${title.slice(0, idx)} <span class="title-accent">${title.slice(idx + 1)}</span>`;
+}
+
 // ── FAVORIS ──────────────────────────────────────────────────────────────────
 
 function getFavs() {
@@ -317,7 +323,7 @@ async function renderLeft(recipe) {
       <div class="cat-tag-bar"></div>
       <span class="cat-tag-text">${cat}</span>
     </div>
-    <div class="recipe-title" style="font-size:${titleSize(recipe.title)}">${recipe.title}</div>
+    <div class="recipe-title" style="font-size:${titleSize(recipe.title)}">${twoToneTitle(recipe.title)}</div>
     <div class="recipe-meta-line">
       <div class="recipe-source">${source}</div>
       <div class="souleiado"></div>
