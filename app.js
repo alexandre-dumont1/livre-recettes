@@ -481,6 +481,15 @@ async function uploadPhoto(event, recipeId, slot) {
 
 // ── NAVIGATION ────────────────────────────────────────────────────────────────
 
+function preloadAdjacent(idx) {
+  [-1, 1].forEach(offset => {
+    const r = filteredRecipes[idx + offset];
+    if (!r) return;
+    sb(`recipe_ingredients?select=*,ingredients(name)&recipe_id=eq.${r.id}&order=display_order`).catch(() => {});
+    sb(`recipe_steps?select=*&recipe_id=eq.${r.id}&order=step_number`).catch(() => {});
+  });
+}
+
 async function showPage(idx) {
   currentIndex = idx;
   const r = filteredRecipes[idx];
@@ -502,6 +511,7 @@ async function showPage(idx) {
     document.getElementById('pageRight').innerHTML = `<div class="loading-state"></div>`;
   }
   updateControls();
+  preloadAdjacent(idx);
 }
 
 async function changePage(dir) {
