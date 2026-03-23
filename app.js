@@ -12,11 +12,18 @@ const CAT_COLORS = { 1: '#c8603a', 2: '#3a6ab0', 3: '#1a8a6a', 4: '#b07a1a', 5: 
 
 let allRecipes = [], filteredRecipes = [], currentIndex = 0, isAnimating = false, catFilter = 0;
 
+// Cache en mémoire pour éviter de refetcher ingrédients/étapes à chaque page
+const cache = {};
+
 async function sb(path) {
+  if (cache[path]) return cache[path];
   const r = await fetch(`${URL_SB}/rest/v1/${path}`, {
     headers: { apikey: KEY_SB, Authorization: `Bearer ${KEY_SB}` }
   });
-  return r.json();
+  if (!r.ok) throw new Error(`Erreur réseau : ${r.status}`);
+  const data = await r.json();
+  cache[path] = data;
+  return data;
 }
 
 function ft(min) {
@@ -158,9 +165,15 @@ async function showPage(idx) {
   document.getElementById('pageLeft').innerHTML = `<div class="loading-state">\u2026</div>`;
   document.getElementById('pageRight').innerHTML = `<div class="loading-state"></div>`;
 
-  const [lHTML] = await Promise.all([renderLeft(r)]);
-  document.getElementById('pageLeft').innerHTML = lHTML;
-  document.getElementById('pageRight').innerHTML = renderRight(r);
+  try {
+    const lHTML = await renderLeft(r);
+    document.getElementById('pageLeft').innerHTML = lHTML;
+    document.getElementById('pageRight').innerHTML = renderRight(r);
+  } catch (err) {
+    console.error('Erreur chargement recette :', err);
+    document.getElementById('pageLeft').innerHTML = `<div class="loading-state">Impossible de charger la recette.</div>`;
+    document.getElementById('pageRight').innerHTML = `<div class="loading-state"></div>`;
+  }
   updateControls();
 }
 
@@ -188,7 +201,7 @@ function updateControls() {
 }
 
 function applyFilter() {
-  const q = document.getElementById('search').value.toLowerCase();
+  const q = document.getElementById('search').value.trim().toLowerCase();
   filteredRecipes = allRecipes.filter(r => {
     const catOk = catFilter === 0 || r.category_id === catFilter;
     const qOk = !q || r.title.toLowerCase().includes(q) || (r.tags||[]).some(t => t.toLowerCase().includes(q));
@@ -199,7 +212,13 @@ function applyFilter() {
   buildTOC();
 }
 
-document.getElementById('search').addEventListener('input', applyFilter);
+// Debounce : attend 300ms après la dernière frappe avant de filtrer
+let searchTimer;
+document.getElementById('search').addEventListener('input', () => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(applyFilter, 300);
+});
+
 document.querySelectorAll('.cat-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
@@ -241,8 +260,13 @@ document.addEventListener('keydown', e => {
 });
 
 (async () => {
-  allRecipes = await sb('recipes?select=*&order=title');
-  filteredRecipes = [...allRecipes];
-  buildTOC();
-  await showPage(0);
+  try {
+    allRecipes = await sb('recipes?select=*&order=title');
+    filteredRecipes = [...allRecipes];
+    buildTOC();
+    await showPage(0);
+  } catch (err) {
+    console.error('Erreur chargement initial :', err);
+    document.getElementById('pageLeft').innerHTML = `<div class="loading-state">Impossible de charger les recettes.<br>Vérifie ta connexion et ton config.js.</div>`;
+  }
 })();
