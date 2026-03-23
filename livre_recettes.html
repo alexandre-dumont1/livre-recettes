@@ -10,50 +10,51 @@
 </head>
 <body>
 
-<div class="topbar">
-  <div class="site-logo">Le Livre de Recettes</div>
+<header class="topbar" role="banner">
+  <div class="site-logo" aria-label="Le Livre de Recettes">Le Livre de Recettes</div>
   <div class="topbar-right">
-    <input type="search" class="search-input" id="search" placeholder="Rechercher…">
-    <div class="filters">
-      <button class="cat-btn active" data-cat="0">Toutes</button>
-      <button class="cat-btn" data-cat="1">Entrées</button>
-      <button class="cat-btn" data-cat="2">Plats</button>
-      <button class="cat-btn" data-cat="3">Poissons</button>
-      <button class="cat-btn" data-cat="4">Desserts</button>
-    </div>
-    <div class="page-counter" id="pageCounter">— / —</div>
+    <label for="search" class="sr-only">Rechercher une recette</label>
+    <input type="search" class="search-input" id="search" placeholder="Rechercher…" aria-label="Rechercher une recette">
+    <nav class="filters" aria-label="Filtrer par catégorie">
+      <button class="cat-btn active" data-cat="0" aria-pressed="true">Toutes</button>
+      <button class="cat-btn" data-cat="1" aria-pressed="false">Entrées</button>
+      <button class="cat-btn" data-cat="2" aria-pressed="false">Plats</button>
+      <button class="cat-btn" data-cat="3" aria-pressed="false">Poissons</button>
+      <button class="cat-btn" data-cat="4" aria-pressed="false">Desserts</button>
+    </nav>
+    <div class="page-counter" id="pageCounter" aria-live="polite" aria-label="Position dans le livre">— / —</div>
   </div>
-</div>
+</header>
 
-<div class="stage">
+<main class="stage" aria-label="Livre de recettes">
   <div class="book-outer">
-    <div class="book">
-      <div class="spine"></div>
+    <div class="book" role="region" aria-label="Pages du livre">
+      <div class="spine" aria-hidden="true"></div>
       <div class="book-pages">
         <div class="page-flip-container pfc-left" id="pfcLeft">
-          <div class="page-left" id="pageLeft">
+          <article class="page-left" id="pageLeft" aria-label="Recette">
             <div class="loading-state">Chargement…</div>
-          </div>
+          </article>
         </div>
         <div class="page-flip-container pfc-right" id="pfcRight">
-          <div class="page-right" id="pageRight">
+          <aside class="page-right" id="pageRight" aria-label="Détails et statistiques">
             <div class="loading-state"></div>
-          </div>
+          </aside>
         </div>
       </div>
     </div>
   </div>
-</div>
+</main>
 
-<button class="nav-arrow nav-prev" id="prevBtn" onclick="changePage(-1)" disabled>‹</button>
-<button class="nav-arrow nav-next" id="nextBtn" onclick="changePage(1)">›</button>
-<button class="toc-btn" onclick="openTOC()">Table des matières</button>
+<button class="nav-arrow nav-prev" id="prevBtn" onclick="changePage(-1)" aria-label="Recette précédente" disabled>‹</button>
+<button class="nav-arrow nav-next" id="nextBtn" onclick="changePage(1)" aria-label="Recette suivante">›</button>
+<button class="toc-btn" onclick="openTOC()" aria-haspopup="dialog">Table des matières</button>
 
-<div class="toc-overlay" id="tocOverlay" onclick="closeTOCOutside(event)">
+<div class="toc-overlay" id="tocOverlay" role="dialog" aria-modal="true" aria-label="Table des matières" onclick="closeTOCOutside(event)">
   <div class="toc-panel">
     <div class="toc-panel-header">
       <div class="toc-panel-title">Table des Matières</div>
-      <button class="toc-close" onclick="closeTOC()">Fermer ✕</button>
+      <button class="toc-close" onclick="closeTOC()" aria-label="Fermer la table des matières">Fermer ✕</button>
     </div>
     <div class="toc-body" id="tocBody"></div>
   </div>

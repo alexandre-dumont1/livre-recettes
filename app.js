@@ -221,8 +221,12 @@ document.getElementById('search').addEventListener('input', () => {
 
 document.querySelectorAll('.cat-btn').forEach(btn => {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.cat-btn').forEach(b => {
+      b.classList.remove('active');
+      b.setAttribute('aria-pressed', 'false');
+    });
     btn.classList.add('active');
+    btn.setAttribute('aria-pressed', 'true');
     catFilter = parseInt(btn.dataset.cat);
     applyFilter();
   });

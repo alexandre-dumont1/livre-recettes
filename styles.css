@@ -718,3 +718,67 @@ body {
   color: rgba(26,23,20,0.18);
   letter-spacing: 0.02em;
 }
+
+/* ACCESSIBILITÉ */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* RESPONSIVE — scale le livre sur les écrans intermédiaires */
+@media (max-width: 1140px) {
+  .stage { transform: scale(0.85); transform-origin: top center; }
+  body { justify-content: flex-start; padding-top: 0; }
+}
+
+@media (max-width: 960px) {
+  .stage { transform: scale(0.7); transform-origin: top center; }
+}
+
+/* MOBILE — une page à la fois, layout vertical */
+@media (max-width: 700px) {
+  html, body { overflow: auto; height: auto; }
+
+  .topbar { height: auto; flex-wrap: wrap; gap: 0.5rem; padding: 0.6rem 1rem; }
+  .topbar-right { flex-wrap: wrap; gap: 0.5rem; }
+  .search-input { width: 100%; }
+  .filters { flex-wrap: wrap; }
+
+  .stage { transform: none; margin-top: 0; perspective: none; width: 100%; }
+  .book-outer { filter: none; width: 100%; }
+  .book { width: 100%; height: auto; flex-direction: column; }
+  .spine { display: none; }
+  .book-pages { flex-direction: column; position: static; }
+
+  .page-flip-container { position: static; width: 100% !important; height: auto; left: auto; transform-origin: unset; }
+  .pfc-left.flipping-fwd, .pfc-right.flipping-back { animation: none; }
+
+  .page-left, .page-right { width: 100%; height: auto; min-height: 60vh; box-shadow: none; }
+  .page-left-body { overflow-y: visible; }
+
+  .nav-arrow { display: none; }
+  .toc-btn { position: static; transform: none; display: block; margin: 1rem auto; }
+
+  .toc-panel { width: 95vw; max-height: 85vh; }
+}
+
+/* IMPRESSION */
+@media print {
+  body { background: white; overflow: auto; }
+  .topbar, .nav-arrow, .toc-btn, .toc-overlay, .spine { display: none !important; }
+  .stage { transform: none; margin: 0; perspective: none; }
+  .book-outer { filter: none; }
+  .book { width: 100%; height: auto; flex-direction: column; }
+  .book-pages { flex-direction: column; position: static; }
+  .page-flip-container { position: static; width: 100% !important; height: auto; }
+  .page-left, .page-right { width: 100%; height: auto; box-shadow: none; page-break-inside: avoid; }
+  .page-left-body { overflow: visible; }
+  .page-right { border-top: 1px solid #ddd; }
+}
