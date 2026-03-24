@@ -1,0 +1,86 @@
+# =============================================================
+# .claudeignore — Optimisation contexte LLM
+# Syntaxe identique à .gitignore
+# =============================================================
+
+
+# ─── Skill UI/UX (données de design system, ~700 KB de CSV) ──
+.claude/skills/
+.claude/worktrees/
+
+
+# ─── Prototypes et variantes HTML archivées ──────────────────
+demos/
+livre_recettes_1.html
+livre_recettes_2.html
+
+
+# ─── Métadonnées système et bytecode ─────────────────────────
+.DS_Store
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+
+
+# ─── Dépendances ─────────────────────────────────────────────
+node_modules/
+
+
+# ─── Fichiers Lock ───────────────────────────────────────────
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+bun.lockb
+
+
+# ─── Build et fichiers compilés ──────────────────────────────
+dist/
+build/
+.next/
+out/
+**/*.min.js
+**/*.min.css
+**/*.map
+
+
+# ─── Logs et Cache ───────────────────────────────────────────
+*.log
+.cache/
+.turbo/
+.parcel-cache/
+
+
+# ─── Variables d'environnement ───────────────────────────────
+.env
+.env.local
+.env.*.local
+config.js
+
+
+# ─── Couverture de tests ─────────────────────────────────────
+coverage/
+.nyc_output/
+lcov.info
+
+
+# ─── Bases de données locales ────────────────────────────────
+*.sqlite
+*.sqlite3
+*.db
+
+
+# ─── Assets binaires lourds ──────────────────────────────────
+**/*.png
+**/*.jpg
+**/*.jpeg
+**/*.gif
+**/*.webp
+**/*.svg
+**/*.ico
+**/*.woff
+**/*.woff2
+**/*.ttf
+**/*.eot
+**/*.mp4
+**/*.mp3
+**/*.pdf
