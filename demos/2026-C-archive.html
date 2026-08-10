@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Direction C — Archive</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=Caveat:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   DIRECTION C — ARCHIVE
+   Thèse : tu n'as pas une collection de recettes avec des scans en
+   bonus, tu as un FONDS D'ARCHIVES de 121 manuscrits. Le document
+   devient la pièce maîtresse, la transcription devient une couche
+   par-dessus. L'écriture de la grand-mère est le sujet, pas un
+   ornement de page droite.
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+  --fond:      #d9d4c8;   /* le plateau sur lequel repose le document */
+  --carton:    #ebe7dd;   /* les panneaux */
+  --doc:       #ffffff;
+  --encre:     #1c1a17;   /* 14,06:1  AAA */
+  --encre-mid: #4c473f;   /* 7,46:1  AAA */
+  --encre-fin: #6b6459;   /* 4,73:1  AA — plancher */
+  --terre:     #8c4a2f;   /* 5,42:1  AA */
+  --filet:     #c3bcab;
+  --corps:     17px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--fond);
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-size: var(--corps); line-height: 1.68; color: var(--encre);
+  -webkit-font-smoothing: antialiased; padding-bottom: 6rem;
+}
+.mono { font-family: 'IBM Plex Mono', ui-monospace, monospace; }
+
+.meta { background: #1c1a17; color: #c3bcab; padding: 1.5rem 2rem; }
+.meta h1 { font-size: 1.35rem; font-weight: 600; }
+.meta p { font-size: 0.95rem; color: #8f887b; margin-top: 0.4rem; max-width: 64ch; }
+.meta code { background: rgba(255,255,255,0.08); padding: 0.1rem 0.35rem; font-size: 0.85em; }
+.section-label {
+  max-width: 1240px; margin: 3rem auto 1rem; padding: 0 2rem;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.78rem; letter-spacing: 0.16em; text-transform: uppercase;
+  color: #6f6858; font-weight: 500;
+}
+
+/* ── Barre de cote ── */
+.cote {
+  max-width: 1240px; margin: 0 auto; padding: 0.9rem 2rem;
+  background: var(--encre); color: #e4dfd3;
+  display: flex; gap: 1.6rem; align-items: baseline; flex-wrap: wrap;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase;
+}
+.cote-fonds { color: #a09889; }
+.cote-num { color: #d9a06f; font-weight: 600; }
+.cote-sep { color: #55504a; }
+.cote-droite { margin-left: auto; color: #a09889; }
+
+/* ── La pièce ── */
+.piece {
+  max-width: 1240px; margin: 0 auto;
+  background: var(--carton);
+  display: grid; grid-template-columns: 320px 1fr;
+  border: 1px solid var(--filet); border-top: none;
+}
+
+/* Cartel de musée */
+.cartel { padding: 2.2rem 1.8rem; border-right: 1px solid var(--filet); }
+.cartel-titre {
+  font-size: 1.9rem; line-height: 1.12; font-weight: 600;
+  margin-bottom: 0.4rem; letter-spacing: -0.01em;
+}
+.cartel-sous {
+  font-family: 'Caveat', cursive; font-size: 1.4rem; color: var(--terre);
+  margin-bottom: 1.8rem;
+}
+.champ { padding: 0.7rem 0; border-top: 1px solid var(--filet); }
+.champ-l {
+  display: block; font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--encre-fin); margin-bottom: 0.2rem;
+}
+.champ-v { font-size: 1rem; color: var(--encre); }
+.champ-v .mono { font-size: 0.95rem; }
+
+.renvoi {
+  margin-top: 1.6rem; padding: 0.9rem 1rem;
+  background: var(--doc); border-left: 3px solid var(--terre);
+  font-size: 0.95rem;
+}
+.renvoi-l {
+  display: block; font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.74rem; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--terre); font-weight: 600; margin-bottom: 0.3rem;
+}
+
+/* ── Le document, en pièce maîtresse ── */
+.plateau {
+  background: var(--fond); padding: 2.4rem;
+  display: flex; flex-direction: column; align-items: center;
+}
+.doc-outils {
+  width: 100%; max-width: 620px; display: flex; gap: 0.5rem;
+  margin-bottom: 1.1rem; align-items: center;
+}
+.outil {
+  min-height: 44px; padding: 0 0.95rem;
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.76rem;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  background: var(--carton); border: 1px solid var(--filet); color: var(--encre-mid);
+  cursor: pointer; transition: background-color .15s, color .15s;
+}
+.outil:hover { background: var(--doc); }
+.outil[aria-pressed="true"] { background: var(--encre); color: #e4dfd3; border-color: var(--encre); }
+.outil:focus-visible { outline: 2px solid var(--terre); outline-offset: 2px; }
+.doc-poids { margin-left: auto; font-family: 'IBM Plex Mono', monospace; font-size: 0.74rem; color: var(--encre-fin); }
+
+.document {
+  width: 100%; max-width: 620px; height: 780px;
+  background: var(--doc); padding: 14px;
+  border: 1px solid var(--filet);
+  box-shadow: 0 1px 0 rgba(0,0,0,0.06), 0 12px 28px rgba(28,26,23,0.12);
+}
+.document iframe { width: 100%; height: 100%; border: 0; display: block; }
+.doc-cap {
+  max-width: 620px; margin-top: 1rem;
+  font-family: 'Caveat', cursive; font-size: 1.45rem; color: var(--encre-mid); text-align: center;
+}
+
+/* ── La transcription, en couche secondaire ── */
+.transcription {
+  max-width: 1240px; margin: 0 auto; padding: 2.6rem 2.4rem 3rem;
+  background: var(--carton); border: 1px solid var(--filet); border-top: none;
+}
+.trans-h {
+  display: flex; align-items: baseline; gap: 1rem;
+  border-bottom: 1px solid var(--encre); padding-bottom: 0.6rem; margin-bottom: 2rem;
+}
+.trans-h h3 { font-family: 'IBM Plex Mono', monospace; font-size: 0.82rem; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 600; }
+.trans-h span { font-family: 'IBM Plex Mono', monospace; font-size: 0.74rem; color: var(--encre-fin); margin-left: auto; }
+
+.trans-grille { display: grid; grid-template-columns: 0.8fr 1.2fr; gap: 3rem; }
+.bloc-t {
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.74rem;
+  letter-spacing: 0.16em; text-transform: uppercase; color: var(--encre-fin);
+  margin-bottom: 1rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--filet);
+}
+.groupe { font-family: 'Caveat', cursive; font-size: 1.3rem; color: var(--terre); margin: 1.1rem 0 0.35rem; }
+.groupe:first-child { margin-top: 0; }
+.ingr { display: flex; gap: 0.8rem; padding: 0.34rem 0; align-items: baseline; }
+.ingr-q { min-width: 74px; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+.ingr-n { color: var(--encre-mid); }
+.ingr-p { color: var(--encre-fin); font-style: italic; font-size: 0.93em; }
+.equiv { font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: var(--terre); }
+
+.etape { display: flex; gap: 1.1rem; padding: 0.8rem 0; border-bottom: 1px solid rgba(195,188,171,0.5); }
+.etape:last-child { border-bottom: none; }
+.etape-n { font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: var(--terre); font-weight: 600; padding-top: 0.28rem; min-width: 2.4ch; }
+.etape-t { font-weight: 600; display: flex; align-items: baseline; gap: 0.7rem; }
+.etape-t .duree { font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; letter-spacing: 0.08em; color: var(--encre-fin); }
+.etape-d { color: var(--encre-mid); }
+
+.portions { display: flex; align-items: center; gap: 0.4rem; margin-top: 1.6rem; }
+.portions-l { font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--encre-fin); margin-right: 0.4rem; }
+.p-btn { min-width: 44px; min-height: 44px; font-family: 'Source Serif 4', serif; font-size: 1.02rem; border: 1px solid var(--filet); background: var(--doc); color: var(--encre-mid); cursor: pointer; }
+.p-btn[aria-pressed="true"] { background: var(--encre); color: #e4dfd3; border-color: var(--encre); }
+.p-btn:focus-visible { outline: 2px solid var(--terre); outline-offset: 2px; }
+
+.note { margin-top: 2rem; padding: 1.1rem 1.3rem; background: var(--doc); border-left: 3px solid var(--encre); }
+.note-l { display: block; font-family: 'IBM Plex Mono', monospace; font-size: 0.74rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--encre-fin); font-weight: 600; margin-bottom: 0.3rem; }
+
+/* ── TÉLÉPHONE ── */
+.tel-rangee { max-width: 1240px; margin: 0 auto; padding: 0 2rem; display: flex; gap: 2.5rem; flex-wrap: wrap; }
+.tel { width: 375px; height: 720px; overflow-y: auto; background: var(--carton); border: 10px solid #1c1a17; border-radius: 28px; }
+.tel-titre { font-family: 'IBM Plex Mono', monospace; font-size: 0.76rem; letter-spacing: 0.14em; text-transform: uppercase; color: #6f6858; margin-bottom: 0.6rem; }
+.tel-cote { background: var(--encre); color: #e4dfd3; padding: 0.7rem 1rem; font-family: 'IBM Plex Mono', monospace; font-size: 0.74rem; letter-spacing: 0.12em; text-transform: uppercase; display: flex; justify-content: space-between; }
+.tel-in { padding: 1.4rem 1.2rem 3rem; }
+.tel-in .cartel-titre { font-size: 1.6rem; }
+.tel-in .document { height: 420px; max-width: none; padding: 8px; }
+.tel-in .trans-grille { grid-template-columns: 1fr; gap: 2rem; }
+.tel-in .doc-cap { font-size: 1.25rem; }
+
+.cuisine { padding: 1.5rem 1.2rem; }
+.cuisine-h { display: flex; justify-content: space-between; font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--encre-fin); border-bottom: 1px solid var(--encre); padding-bottom: 0.7rem; margin-bottom: 1.5rem; }
+.cuisine-n { font-family: 'IBM Plex Mono', monospace; font-size: 0.74rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--terre); font-weight: 600; }
+.cuisine-t { font-size: 2.05rem; line-height: 1.12; font-weight: 600; margin: 0.4rem 0 1rem; }
+.cuisine-d { font-size: 1.22rem; line-height: 1.6; }
+.coche { display: flex; gap: 0.8rem; align-items: center; padding: 0.75rem 0; font-size: 1.06rem; min-height: 44px; }
+.coche input { width: 24px; height: 24px; accent-color: var(--terre); flex-shrink: 0; }
+.coche.faite { color: var(--encre-fin); text-decoration: line-through; }
+.cuisine-bas { display: flex; gap: 0.7rem; margin-top: 2rem; }
+.c-btn { flex: 1; min-height: 52px; font-family: 'IBM Plex Mono', monospace; font-size: 0.82rem; letter-spacing: 0.12em; text-transform: uppercase; border: 1px solid var(--encre); background: none; color: var(--encre); cursor: pointer; }
+.c-btn--prim { background: var(--encre); color: #e4dfd3; }
+.veille { font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--encre-fin); text-align: center; margin-top: 1rem; }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; box-shadow: none !important; } }
+@media (max-width: 980px) {
+  .piece { grid-template-columns: 1fr; }
+  .cartel { border-right: none; border-bottom: 1px solid var(--filet); }
+  .plateau { padding: 1.4rem; }
+  .document { height: 520px; }
+  .transcription { padding: 2rem 1.3rem 2.6rem; }
+  .trans-grille { grid-template-columns: 1fr; gap: 2rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="meta">
+  <h1>Direction C — Archive</h1>
+  <p>Tu n'as pas une collection de recettes avec des scans en bonus : tu as un <strong>fonds de 121 manuscrits</strong>. Le document devient la pièce maîtresse, présentée en grand sur un plateau, avec un cartel de musée à gauche. La transcription passe en couche secondaire, dessous. Gris chauds <code>#d9d4c8</code>, encre <code>#1c1a17</code>, une seule couleur d'accent. IBM Plex Mono pour tout ce qui est documentaire, Source Serif pour la lecture, Caveat pour ce qui vient d'une main.</p>
+</div>
+
+<div class="section-label">Vue bureau</div>
+
+<div class="cote mono">
+  <span class="cote-fonds">Fonds familial</span>
+  <span class="cote-sep">/</span>
+  <span class="cote-num">N° 012</span>
+  <span class="cote-sep">/</span>
+  <span>Desserts &amp; Pâtisseries</span>
+  <span class="cote-droite">Feuillet 1 sur 1 · 2 recettes portées</span>
+</div>
+
+<div class="piece">
+  <aside class="cartel">
+    <h2 class="cartel-titre">Banoffee Pie</h2>
+    <p class="cartel-sous">version Véronique</p>
+
+    <div class="champ">
+      <span class="champ-l">Main</span>
+      <span class="champ-v">Véronique &amp; Francis Marron</span>
+    </div>
+    <div class="champ">
+      <span class="champ-l">Origine</span>
+      <span class="champ-v">Recette de famille</span>
+    </div>
+    <div class="champ">
+      <span class="champ-l">Support</span>
+      <span class="champ-v">Feuillet A4 · <span class="mono">76 ko</span></span>
+    </div>
+    <div class="champ">
+      <span class="champ-l">Entrée au fonds</span>
+      <span class="champ-v mono">2026-03-03</span>
+    </div>
+    <div class="champ">
+      <span class="champ-l">Rendement</span>
+      <span class="champ-v">8 personnes</span>
+    </div>
+    <div class="champ">
+      <span class="champ-l">Durées</span>
+      <span class="champ-v mono">15′ prép · 45′ cuis · 1 h repos</span>
+    </div>
+    <div class="champ">
+      <span class="champ-l">Mots-matières</span>
+      <span class="champ-v mono" style="font-size:0.86rem">tarte · banane · caramel · chantilly · britannique · sans cuisson</span>
+    </div>
+
+    <div class="renvoi">
+      <span class="renvoi-l">Voir aussi</span>
+      Ce feuillet porte une <strong>seconde recette</strong> : Banoffee Pie, version Seveuh's Blog. <span class="mono" style="font-size:0.85rem">→ N° 013</span>
+    </div>
+  </aside>
+
+  <div class="plateau">
+    <div class="doc-outils">
+      <button class="outil" aria-pressed="true">Document</button>
+      <button class="outil" aria-pressed="false">Transcription</button>
+      <button class="outil" aria-pressed="false">Côte à côte</button>
+      <span class="doc-poids mono">PDF · 76 ko</span>
+    </div>
+    <div class="document">
+      <iframe src="https://bxxuorvdntaggxmwqicm.supabase.co/storage/v1/object/public/recipes-pdfs/Banofee_pie_copie.pdf#toolbar=0&view=FitH" title="Feuillet manuscrit de la Banoffee Pie"></iframe>
+    </div>
+    <p class="doc-cap">« Banoffee pie » — de la main de Véronique</p>
+  </div>
+</div>
+
+<div class="transcription">
+  <div class="trans-h">
+    <h3>Transcription</h3>
+    <span class="mono">relue et structurée · 7 ingrédients · 6 étapes</span>
+  </div>
+
+  <p style="max-width:62ch;color:var(--encre-mid);margin-bottom:2.2rem">Tarte anglaise sur base de digestive biscuits, garnie de confiture de lait maison à la cocotte-minute, bananes et chantilly.</p>
+
+  <div class="trans-grille">
+    <div>
+      <div class="bloc-t">Ingrédients</div>
+      <div class="groupe">Base</div>
+      <div class="ingr"><span class="ingr-q">150 g</span><span class="ingr-n">digestive biscuits<span class="ingr-p">, émiettés en chapelure</span></span></div>
+      <div class="ingr"><span class="ingr-q">75 g</span><span class="ingr-n">beurre demi-sel<span class="ingr-p">, fondu</span></span></div>
+      <div class="groupe">Caramel</div>
+      <div class="ingr"><span class="ingr-q">397 g</span><span class="ingr-n">lait concentré sucré<span class="ingr-p">, une boîte</span></span></div>
+      <div class="groupe">Garniture</div>
+      <div class="ingr"><span class="ingr-q">4</span><span class="ingr-n">bananes<span class="ingr-p">, en grosses rondelles</span></span></div>
+      <div class="groupe">Chantilly</div>
+      <div class="ingr"><span class="ingr-q">250 ml</span><span class="ingr-n">crème fleurette<span class="ingr-p">, bien froide</span></span></div>
+      <div class="ingr"><span class="ingr-q">1 c.s.</span><span class="ingr-n">sucre glace <span class="equiv">≈ 12 g</span></span></div>
+      <div class="groupe">Service</div>
+      <div class="ingr"><span class="ingr-q">—</span><span class="ingr-n">cacao en poudre<span class="ingr-p">, pour saupoudrer</span></span></div>
+
+      <div class="portions">
+        <span class="portions-l">Ajuster</span>
+        <button class="p-btn" aria-pressed="false">½</button>
+        <button class="p-btn" aria-pressed="true">×1</button>
+        <button class="p-btn" aria-pressed="false">×2</button>
+        <button class="p-btn" aria-pressed="false">×3</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="bloc-t">Préparation</div>
+      <div class="etape"><span class="etape-n">01</span><div><div class="etape-t">Confiture de lait <span class="duree">50 min</span></div><p class="etape-d">Dans une cocotte-minute, recouvrir la boîte fermée de lait concentré aux trois quarts d'eau. Cuire 45 min après le premier sifflement. Ouvrir une fois refroidie.</p></div></div>
+      <div class="etape"><span class="etape-n">02</span><div><div class="etape-t">Base biscuitée <span class="duree">35 min</span></div><p class="etape-d">Écraser les biscuits en chapelure avec le beurre fondu. Presser dans un moule à charnière de 22 cm chemisé. Réserver 30 min au frais.</p></div></div>
+      <div class="etape"><span class="etape-n">03</span><div><div class="etape-t">Monter la chantilly <span class="duree">5 min</span></div><p class="etape-d">Fouetter la crème fleurette bien froide avec le sucre glace jusqu'à tenue ferme.</p></div></div>
+      <div class="etape"><span class="etape-n">04</span><div><div class="etape-t">Assembler <span class="duree">10 min</span></div><p class="etape-d">Disposer les bananes en rondelles sur la base. Étaler la confiture de lait. Recouvrir de chantilly.</p></div></div>
+      <div class="etape"><span class="etape-n">05</span><div><div class="etape-t">Réfrigérer <span class="duree">1 h</span></div><p class="etape-d">Réserver au frais au minimum une heure.</p></div></div>
+      <div class="etape"><span class="etape-n">06</span><div><div class="etape-t">Servir <span class="duree">3 min</span></div><p class="etape-d">Démouler délicatement et saupoudrer de cacao amer avant de servir.</p></div></div>
+
+      <div class="note">
+        <span class="note-l">Note portée sur le feuillet</span>
+        La confiture de lait se fait à la cocotte-minute en 45 min. Réserver au frais au minimum 1 h avant de servir.
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section-label">Vue téléphone — le document d'abord, puis le mode cuisine</div>
+
+<div class="tel-rangee">
+  <div>
+    <div class="tel-titre">Consultation · 375 px</div>
+    <div class="tel">
+      <div class="tel-cote mono"><span>Fonds familial</span><span>N° 012</span></div>
+      <div class="tel-in">
+        <h2 class="cartel-titre">Banoffee Pie</h2>
+        <p class="cartel-sous">version Véronique</p>
+        <div class="document">
+          <iframe src="https://bxxuorvdntaggxmwqicm.supabase.co/storage/v1/object/public/recipes-pdfs/Banofee_pie_copie.pdf#toolbar=0&view=FitH" title="Feuillet manuscrit"></iframe>
+        </div>
+        <p class="doc-cap">de la main de Véronique</p>
+        <div class="champ" style="margin-top:1.4rem">
+          <span class="champ-l">Main</span><span class="champ-v">Véronique &amp; Francis Marron</span>
+        </div>
+        <div class="champ">
+          <span class="champ-l">Entrée au fonds</span><span class="champ-v mono">2026-03-03</span>
+        </div>
+        <div class="trans-grille" style="margin-top:1.6rem">
+          <div>
+            <div class="bloc-t">Transcription</div>
+            <div class="groupe">Base</div>
+            <div class="ingr"><span class="ingr-q">150 g</span><span class="ingr-n">digestive biscuits</span></div>
+            <div class="ingr"><span class="ingr-q">75 g</span><span class="ingr-n">beurre demi-sel</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="tel-titre">Mode cuisine</div>
+    <div class="tel">
+      <div class="cuisine">
+        <div class="cuisine-h"><span>Banoffee Pie</span><span class="mono">2 / 6</span></div>
+        <div class="cuisine-n">Étape 02 · 35 min</div>
+        <h2 class="cuisine-t">Base biscuitée</h2>
+        <p class="cuisine-d">Écraser les biscuits en chapelure avec le beurre fondu. Presser dans un moule à charnière de 22 cm chemisé. Réserver 30 min au frais.</p>
+        <div style="margin-top:2rem">
+          <div class="bloc-t">Pour cette étape</div>
+          <label class="coche faite"><input type="checkbox" checked> 150 g digestive biscuits</label>
+          <label class="coche"><input type="checkbox"> 75 g beurre demi-sel fondu</label>
+        </div>
+        <div class="cuisine-bas">
+          <button class="c-btn">Précédent</button>
+          <button class="c-btn c-btn--prim">Suivant</button>
+        </div>
+        <p class="veille">L'écran reste allumé</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

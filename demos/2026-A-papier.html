@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Direction A — Papier</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Caveat:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   DIRECTION A — PAPIER
+   Thèse : l'écran arrête d'imiter une application et devient du
+   papier. La lisibilité devient une propriété du support, pas un
+   réglage à surveiller.
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+  --papier:     #fdfbf7;
+  --papier-alt: #f6f2ea;
+  --encre:      #1a1a1a;   /* 16,84:1  AAA */
+  --encre-mid:  #4a4542;   /* 9,15:1  AAA */
+  --encre-fin:  #6d665f;   /* 5,47:1  AA — plancher */
+  --accent:     #9b3a2e;   /* 6,69:1  AA */
+  --filet:      #ddd6c8;
+
+  --pas: 8px;
+  --corps: 17px;           /* jamais sous 16px */
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #e6e1d6;
+  font-family: 'Lora', Georgia, serif;
+  font-size: var(--corps);
+  line-height: 1.65;
+  color: var(--encre);
+  -webkit-font-smoothing: antialiased;
+  padding: 0 0 6rem;
+}
+
+/* Grain : le seul effet de la direction. Pas d'ombre, pas de dégradé. */
+.grain::before {
+  content: '';
+  position: absolute; inset: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+}
+
+/* ── Bandeau explicatif de la maquette (hors design) ── */
+.meta { background: #1a1a1a; color: #e6e1d6; padding: 1.5rem 2rem; }
+.meta h1 { font-size: 1.1rem; letter-spacing: 0.02em; font-weight: 700; }
+.meta p { font-size: 0.95rem; color: #b5aea3; margin-top: 0.4rem; max-width: 62ch; }
+.meta code { background: rgba(255,255,255,0.08); padding: 0.1rem 0.35rem; font-size: 0.85em; }
+.section-label {
+  max-width: 1180px; margin: 3rem auto 1rem; padding: 0 2rem;
+  font-size: 0.8rem; letter-spacing: 0.18em; text-transform: uppercase;
+  color: #7d766b; font-weight: 600;
+}
+
+/* ── LE LIVRE ── */
+.livre {
+  position: relative;
+  max-width: 1180px; margin: 0 auto;
+  display: grid; grid-template-columns: 1.15fr 0.85fr;
+  background: var(--papier);
+  border: 1px solid var(--filet);
+}
+.page { position: relative; padding: 3.2rem 3rem; min-height: 760px; }
+.page--gauche { border-right: 1px solid var(--filet); }
+.page--droite { background: var(--papier-alt); }
+
+.folio {
+  position: absolute; bottom: 1.6rem;
+  font-size: 0.9rem; color: var(--encre-fin); font-variant-numeric: tabular-nums;
+}
+.page--gauche .folio { left: 3rem; }
+.page--droite .folio { right: 3rem; }
+
+/* ── En-tête de recette ── */
+.rubrique {
+  font-size: 0.82rem; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--accent); font-weight: 600; margin-bottom: 1.2rem;
+}
+.titre {
+  font-size: 2.7rem; line-height: 1.12; font-weight: 600;
+  letter-spacing: -0.015em; margin-bottom: 0.9rem;
+}
+.provenance {
+  font-family: 'Caveat', cursive; font-size: 1.5rem;
+  color: var(--encre-mid); margin-bottom: 0.3rem;
+}
+.provenance em { font-style: normal; color: var(--accent); }
+.chapeau {
+  font-size: 1.02rem; color: var(--encre-mid); font-style: italic;
+  max-width: 46ch; margin-bottom: 2rem;
+}
+
+.filet-orne {
+  display: flex; align-items: center; gap: 0.8rem;
+  color: var(--filet); margin: 2rem 0;
+}
+.filet-orne::before, .filet-orne::after {
+  content: ''; height: 1px; background: var(--filet); flex: 1;
+}
+.filet-orne span { color: var(--accent); font-size: 0.9rem; }
+
+/* ── Repères ── */
+.reperes { display: flex; flex-wrap: wrap; gap: 2.4rem; margin-bottom: 2rem; }
+.repere-l {
+  font-size: 0.76rem; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--encre-fin); display: block; margin-bottom: 0.15rem;
+}
+.repere-v { font-size: 1.15rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* ── Portions ── */
+.portions { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 2.2rem; }
+.portions-l { font-size: 0.82rem; color: var(--encre-fin); }
+.portion-btn {
+  font-family: inherit; font-size: 0.95rem;
+  min-width: 44px; min-height: 44px;      /* cible tactile conforme */
+  border: 1px solid var(--filet); background: none; color: var(--encre-mid);
+  cursor: pointer; transition: background-color .15s, color .15s;
+}
+.portion-btn:hover { background: var(--papier-alt); }
+.portion-btn[aria-pressed="true"] {
+  background: var(--encre); color: var(--papier); border-color: var(--encre);
+}
+.portion-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ── Deux colonnes ── */
+.corps { display: grid; grid-template-columns: 0.85fr 1.15fr; gap: 3rem; }
+.colonne-titre {
+  font-size: 0.82rem; letter-spacing: 0.2em; text-transform: uppercase;
+  font-weight: 600; padding-bottom: 0.5rem; margin-bottom: 1.1rem;
+  border-bottom: 1px solid var(--filet);
+}
+
+.groupe {
+  font-family: 'Caveat', cursive; font-size: 1.3rem; color: var(--accent);
+  margin: 1.1rem 0 0.4rem;
+}
+.groupe:first-child { margin-top: 0; }
+.ingr { display: flex; gap: 0.7rem; padding: 0.34rem 0; align-items: baseline; }
+.ingr-q {
+  min-width: 68px; text-align: right; font-weight: 600;
+  font-variant-numeric: tabular-nums; color: var(--encre);
+}
+.ingr-n { color: var(--encre-mid); }
+.ingr-p { color: var(--encre-fin); font-style: italic; font-size: 0.94em; }
+
+.etape { display: flex; gap: 1rem; padding: 0.85rem 0; border-bottom: 1px solid rgba(221,214,200,0.5); }
+.etape:last-child { border-bottom: none; }
+.etape-n {
+  font-size: 1.5rem; font-weight: 600; color: var(--filet);
+  line-height: 1; min-width: 2ch; font-variant-numeric: tabular-nums;
+}
+.etape-t { font-weight: 600; margin-bottom: 0.2rem; }
+.etape-d { color: var(--encre-mid); font-size: 0.98rem; }
+.etape-duree {
+  font-size: 0.78rem; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--accent); margin-left: 0.6rem; white-space: nowrap;
+}
+
+.note {
+  margin-top: 2.2rem; padding: 1.2rem 1.4rem;
+  background: var(--papier-alt); border-left: 3px solid var(--accent);
+}
+.note-l {
+  font-size: 0.76rem; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--accent); font-weight: 600; display: block; margin-bottom: 0.3rem;
+}
+
+/* ── Page droite : le manuscrit ── */
+.manuscrit-l {
+  font-size: 0.82rem; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--encre-fin); font-weight: 600; margin-bottom: 1rem;
+  display: flex; justify-content: space-between; align-items: baseline;
+}
+.manuscrit-cadre {
+  background: #fff; border: 1px solid var(--filet); padding: 10px;
+  height: 480px; display: block;
+}
+.manuscrit-cadre iframe { width: 100%; height: 100%; border: 0; display: block; }
+.manuscrit-legende {
+  font-family: 'Caveat', cursive; font-size: 1.35rem;
+  color: var(--encre-mid); text-align: center; margin-top: 0.8rem;
+}
+.mots-cles { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 2rem; }
+.mot {
+  font-size: 0.8rem; padding: 0.22rem 0.6rem;
+  border: 1px solid var(--filet); color: var(--encre-mid);
+}
+
+/* ── VUE TÉLÉPHONE ── */
+.tel-rangee { max-width: 1180px; margin: 0 auto; padding: 0 2rem; display: flex; gap: 2.5rem; flex-wrap: wrap; }
+.tel {
+  width: 375px; height: 720px; overflow-y: auto;
+  background: var(--papier); border: 10px solid #1a1a1a; border-radius: 28px;
+}
+.tel-titre { font-size: 0.8rem; letter-spacing: 0.14em; text-transform: uppercase; color: #7d766b; margin-bottom: 0.6rem; font-weight: 600; }
+.tel-in { padding: 1.4rem 1.2rem 3rem; }
+/* Le mobile se RÉORGANISE : une colonne, mêmes tailles de texte. */
+.tel-in .titre { font-size: 1.85rem; }
+.tel-in .corps { grid-template-columns: 1fr; gap: 2rem; }
+.tel-in .reperes { gap: 1.4rem; }
+.tel-in .manuscrit-cadre { height: 300px; }
+
+/* Mode cuisine : lecture par défaut sur téléphone */
+.cuisine { background: var(--papier); padding: 1.6rem 1.3rem; min-height: 100%; }
+.cuisine-haut {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 0.82rem; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--encre-fin); border-bottom: 1px solid var(--filet);
+  padding-bottom: 0.8rem; margin-bottom: 1.6rem;
+}
+.cuisine-etape-n { font-size: 0.85rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); font-weight: 600; }
+.cuisine-t { font-size: 2rem; line-height: 1.15; font-weight: 600; margin: 0.5rem 0 1rem; }
+.cuisine-d { font-size: 1.22rem; line-height: 1.6; color: var(--encre); }   /* gros texte, bras tendu */
+.cuisine-ingr { margin-top: 2rem; padding-top: 1.4rem; border-top: 1px solid var(--filet); }
+.coche { display: flex; gap: 0.8rem; align-items: center; padding: 0.75rem 0; font-size: 1.08rem; min-height: 44px; }
+.coche input { width: 24px; height: 24px; accent-color: var(--accent); flex-shrink: 0; }
+.coche.faite { color: var(--encre-fin); text-decoration: line-through; }
+.cuisine-bas { display: flex; gap: 0.8rem; margin-top: 2rem; }
+.cuisine-btn {
+  flex: 1; min-height: 52px; font-family: inherit; font-size: 1rem; font-weight: 600;
+  border: 1px solid var(--encre); background: none; color: var(--encre); cursor: pointer;
+}
+.cuisine-btn--prim { background: var(--encre); color: var(--papier); }
+.veille { font-size: 0.85rem; color: var(--encre-fin); text-align: center; margin-top: 1rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+@media (max-width: 900px) {
+  /* On réorganise, on ne réduit jamais à l'échelle. */
+  .livre { grid-template-columns: 1fr; }
+  .page--gauche { border-right: none; border-bottom: 1px solid var(--filet); }
+  .corps { grid-template-columns: 1fr; }
+  .page { padding: 2rem 1.3rem; min-height: 0; }
+  .titre { font-size: 2rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="meta">
+  <h1>Direction A — Papier</h1>
+  <p>L'écran arrête d'imiter une application et devient du papier. Crème <code>#fdfbf7</code>, encre <code>#1a1a1a</code>, contraste 14:1 sans effort. Grain léger, aucune ombre, aucun dégradé. Corps de texte à 17&nbsp;px, jamais moins de 16. Cibles tactiles à 44&nbsp;px. Lisible dans une cuisine ensoleillée, où un thème sombre devient un miroir, et directement transposable au livre imprimé.</p>
+</div>
+
+<div class="section-label">Vue bureau</div>
+
+<div class="livre grain">
+  <div class="page page--gauche">
+    <div class="rubrique">Desserts &amp; Pâtisseries</div>
+    <h2 class="titre">Banoffee Pie</h2>
+    <div class="provenance">de la main de <em>Véronique Marron</em></div>
+    <p class="chapeau">Tarte anglaise sur base de digestive biscuits, garnie de confiture de lait maison à la cocotte-minute, bananes et chantilly.</p>
+
+    <div class="reperes">
+      <div><span class="repere-l">Personnes</span><span class="repere-v">8</span></div>
+      <div><span class="repere-l">Préparation</span><span class="repere-v">15 min</span></div>
+      <div><span class="repere-l">Cuisson</span><span class="repere-v">45 min</span></div>
+      <div><span class="repere-l">Repos</span><span class="repere-v">1 h</span></div>
+      <div><span class="repere-l">Difficulté</span><span class="repere-v">Facile</span></div>
+    </div>
+
+    <div class="portions">
+      <span class="portions-l">Ajuster&nbsp;:</span>
+      <button class="portion-btn" aria-pressed="false">½</button>
+      <button class="portion-btn" aria-pressed="true">×1</button>
+      <button class="portion-btn" aria-pressed="false">×2</button>
+      <button class="portion-btn" aria-pressed="false">×3</button>
+    </div>
+
+    <div class="corps">
+      <div>
+        <h3 class="colonne-titre">Ingrédients</h3>
+        <div class="groupe">Base</div>
+        <div class="ingr"><span class="ingr-q">150 g</span><span class="ingr-n">digestive biscuits<span class="ingr-p">, émiettés en chapelure</span></span></div>
+        <div class="ingr"><span class="ingr-q">75 g</span><span class="ingr-n">beurre<span class="ingr-p">, fondu demi-sel</span></span></div>
+        <div class="groupe">Caramel</div>
+        <div class="ingr"><span class="ingr-q">397 g</span><span class="ingr-n">lait concentré sucré<span class="ingr-p">, 1 boîte</span></span></div>
+        <div class="groupe">Garniture</div>
+        <div class="ingr"><span class="ingr-q">4</span><span class="ingr-n">bananes<span class="ingr-p">, en grosses rondelles</span></span></div>
+        <div class="groupe">Chantilly</div>
+        <div class="ingr"><span class="ingr-q">250 ml</span><span class="ingr-n">crème fleurette<span class="ingr-p">, bien froide</span></span></div>
+        <div class="ingr"><span class="ingr-q">1 c.s.</span><span class="ingr-n">sucre glace <span class="ingr-p">(≈ 12 g)</span></span></div>
+        <div class="groupe">Service</div>
+        <div class="ingr"><span class="ingr-q">—</span><span class="ingr-n">cacao en poudre<span class="ingr-p">, pour saupoudrer</span></span></div>
+      </div>
+
+      <div>
+        <h3 class="colonne-titre">Préparation</h3>
+        <div class="etape"><span class="etape-n">1</span><div><div class="etape-t">Confiture de lait<span class="etape-duree">50 min</span></div><p class="etape-d">Dans une cocotte-minute, recouvrir la boîte fermée de lait concentré aux 3/4 d'eau. Cuire 45 min après le 1<sup>er</sup> sifflement. Ouvrir une fois refroidie.</p></div></div>
+        <div class="etape"><span class="etape-n">2</span><div><div class="etape-t">Base biscuitée<span class="etape-duree">35 min</span></div><p class="etape-d">Écraser les biscuits en chapelure avec le beurre fondu. Presser dans un moule à charnière de 22 cm chemisé. Réserver 30 min au frais.</p></div></div>
+        <div class="etape"><span class="etape-n">3</span><div><div class="etape-t">Monter la chantilly<span class="etape-duree">5 min</span></div><p class="etape-d">Fouetter la crème fleurette bien froide avec le sucre glace jusqu'à tenue ferme.</p></div></div>
+        <div class="etape"><span class="etape-n">4</span><div><div class="etape-t">Assembler<span class="etape-duree">10 min</span></div><p class="etape-d">Disposer les bananes en rondelles sur la base. Étaler la confiture de lait. Recouvrir de chantilly.</p></div></div>
+        <div class="etape"><span class="etape-n">5</span><div><div class="etape-t">Réfrigérer<span class="etape-duree">1 h</span></div><p class="etape-d">Réserver au frais au minimum une heure.</p></div></div>
+        <div class="etape"><span class="etape-n">6</span><div><div class="etape-t">Servir<span class="etape-duree">3 min</span></div><p class="etape-d">Démouler délicatement et saupoudrer de cacao amer avant de servir.</p></div></div>
+
+        <div class="note">
+          <span class="note-l">Note de famille</span>
+          La confiture de lait se fait à la cocotte-minute en 45 min. Réserver au frais au minimum 1 h avant de servir.
+        </div>
+      </div>
+    </div>
+    <span class="folio">23</span>
+  </div>
+
+  <div class="page page--droite">
+    <div class="manuscrit-l"><span>Manuscrit d'origine</span><span>A4 · 76 ko</span></div>
+    <div class="manuscrit-cadre">
+      <iframe src="https://bxxuorvdntaggxmwqicm.supabase.co/storage/v1/object/public/recipes-pdfs/Banofee_pie_copie.pdf#toolbar=0&view=FitH" title="Manuscrit original de la Banoffee Pie"></iframe>
+    </div>
+    <p class="manuscrit-legende">écrit par Véronique &amp; Francis</p>
+
+    <div class="filet-orne"><span>❦</span></div>
+
+    <div class="manuscrit-l"><span>Cette page porte aussi</span></div>
+    <div class="ingr" style="padding-top:0">
+      <span class="ingr-n"><strong>Banoffee Pie</strong><span class="ingr-p"> — version Seveuh's Blog</span></span>
+    </div>
+
+    <div class="mots-cles">
+      <span class="mot">tarte</span><span class="mot">banane</span><span class="mot">caramel</span>
+      <span class="mot">chantilly</span><span class="mot">britannique</span><span class="mot">sans cuisson</span>
+    </div>
+    <span class="folio">24</span>
+  </div>
+</div>
+
+<div class="section-label">Vue téléphone — lecture, puis mode cuisine</div>
+
+<div class="tel-rangee">
+  <div>
+    <div class="tel-titre">Lecture · 375 px</div>
+    <div class="tel">
+      <div class="tel-in grain">
+        <div class="rubrique">Desserts</div>
+        <h2 class="titre">Banoffee Pie</h2>
+        <div class="provenance">de <em>Véronique Marron</em></div>
+        <div class="reperes">
+          <div><span class="repere-l">Personnes</span><span class="repere-v">8</span></div>
+          <div><span class="repere-l">Prép.</span><span class="repere-v">15 min</span></div>
+          <div><span class="repere-l">Cuisson</span><span class="repere-v">45 min</span></div>
+        </div>
+        <div class="corps">
+          <div>
+            <h3 class="colonne-titre">Ingrédients</h3>
+            <div class="groupe">Base</div>
+            <div class="ingr"><span class="ingr-q">150 g</span><span class="ingr-n">digestive biscuits</span></div>
+            <div class="ingr"><span class="ingr-q">75 g</span><span class="ingr-n">beurre demi-sel</span></div>
+            <div class="groupe">Caramel</div>
+            <div class="ingr"><span class="ingr-q">397 g</span><span class="ingr-n">lait concentré sucré</span></div>
+          </div>
+          <div>
+            <h3 class="colonne-titre">Manuscrit</h3>
+            <div class="manuscrit-cadre">
+              <iframe src="https://bxxuorvdntaggxmwqicm.supabase.co/storage/v1/object/public/recipes-pdfs/Banofee_pie_copie.pdf#toolbar=0&view=FitH" title="Manuscrit original"></iframe>
+            </div>
+            <p class="manuscrit-legende">la main de Véronique</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="tel-titre">Mode cuisine · une étape à la fois</div>
+    <div class="tel">
+      <div class="cuisine">
+        <div class="cuisine-haut"><span>Banoffee Pie</span><span>2 / 6</span></div>
+        <div class="cuisine-etape-n">Étape 2 · 35 min</div>
+        <h2 class="cuisine-t">Base biscuitée</h2>
+        <p class="cuisine-d">Écraser les biscuits en chapelure avec le beurre fondu. Presser dans un moule à charnière de 22 cm chemisé. Réserver 30 min au frais.</p>
+
+        <div class="cuisine-ingr">
+          <div class="colonne-titre">Pour cette étape</div>
+          <label class="coche faite"><input type="checkbox" checked> 150 g digestive biscuits</label>
+          <label class="coche"><input type="checkbox"> 75 g beurre demi-sel fondu</label>
+        </div>
+
+        <div class="cuisine-bas">
+          <button class="cuisine-btn">Précédent</button>
+          <button class="cuisine-btn cuisine-btn--prim">Suivant</button>
+        </div>
+        <p class="veille">L'écran reste allumé pendant la recette</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

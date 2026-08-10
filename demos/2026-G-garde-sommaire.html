@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Page de garde et sommaire — variantes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Archivo:wght@400;500;600;700&family=Caveat:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   Trois couvertures, deux sommaires. Toutes les données sont réelles :
+   122 recettes, 117 manuscrits, 6 chapitres, 501 étapes, et les mains
+   nommées dans la colonne author de la base.
+   ═══════════════════════════════════════════════════════════════ */
+:root{
+  --creme:#f4f0e6; --creme2:#ebe6d9; --plateau:#ddd7c8;
+  --noir:#14120e; --gris:#4a453c; --gris-fin:#6b6459;
+  --orange:#d1500f; --orange-f:#a83d08; --filet:#cfc7b4;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--plateau);color:var(--noir);font-family:'Archivo',system-ui,sans-serif;
+  font-size:16px;line-height:1.6;padding-bottom:6rem}
+.entete{background:var(--noir);color:#cfc7b4;padding:1.5rem 1.8rem}
+.entete h1{font-family:'Permanent Marker',cursive;font-size:1.7rem;color:var(--creme)}
+.entete p{color:#a09889;font-size:.94rem;margin-top:.4rem;max-width:82ch}
+.section{max-width:1300px;margin:2.6rem auto 0;padding:0 1.8rem}
+.section>h2{font-family:'Permanent Marker',cursive;font-size:1.9rem;margin-bottom:.2rem}
+.section>p{color:var(--gris);font-size:.95rem;max-width:78ch;margin-bottom:1.3rem}
+.cas{margin-bottom:2.4rem}
+.cas-tete{display:flex;align-items:baseline;gap:.7rem;margin-bottom:.5rem}
+.cas-num{font-family:'Permanent Marker',cursive;font-size:1.7rem;color:var(--orange-f);line-height:1}
+.cas-nom{font-weight:700}
+.cas-axe{margin-left:auto;font-size:.74rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gris-fin);font-weight:600}
+.cas-note{font-size:.88rem;color:var(--gris);margin-top:.6rem}
+
+/* une page seule, au format du livre */
+.page{position:relative;width:100%;max-width:560px;height:700px;background:var(--creme);
+  overflow:hidden;box-shadow:0 14px 32px rgba(20,18,14,.16)}
+.page::before{content:'';position:absolute;left:0;top:0;bottom:0;width:7px;background:var(--orange);z-index:5}
+.duo{display:flex;gap:1.6rem;flex-wrap:wrap}
+
+/* ══════════ COUVERTURE 1 · FRONTISPICE ══════════ */
+.c1{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;text-align:center;padding:3rem 2.6rem}
+.c1 .eyebrow{font-size:.74rem;letter-spacing:.24em;text-transform:uppercase;font-weight:700;color:var(--orange-f);margin-bottom:1.4rem}
+.c1 .titre{font-family:'Permanent Marker',cursive;font-size:3.1rem;line-height:1.04}
+.c1 .nom{color:var(--orange-f)}
+.c1 .filet{width:70px;height:2px;background:var(--noir);margin:1.5rem 0}
+.c1 .mains-lab{font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gris-fin);font-weight:700;margin-bottom:.4rem}
+.c1 .mains{font-family:'Caveat',cursive;font-size:1.5rem;line-height:1.5;color:var(--gris);max-width:26ch}
+.c1 .chiffres{position:absolute;bottom:2.4rem;left:0;right:0;display:flex;justify-content:center;gap:0}
+.c1 .ch{padding:0 1.1rem;border-left:1px solid var(--filet)}
+.c1 .ch:first-child{border-left:0}
+.c1 .ch b{display:block;font-family:'Fraunces',serif;font-size:1.5rem;font-weight:700;line-height:1}
+.c1 .ch span{font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gris-fin);font-weight:600}
+
+/* ══════════ COUVERTURE 2 · AFFICHE ══════════ */
+.c2{position:absolute;inset:0;padding:2.6rem 2.2rem 2.6rem 2.8rem;display:flex;flex-direction:column}
+.c2 .haut{font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;font-weight:700;
+  color:var(--gris-fin);border-bottom:2px solid var(--noir);padding-bottom:.5rem;display:flex;justify-content:space-between}
+.c2 .titre{font-family:'Permanent Marker',cursive;font-size:4.4rem;line-height:.94;margin-top:1.6rem}
+.c2 .titre .petit{display:block;font-size:1.5rem;line-height:1.1}
+.c2 .titre .nom{color:var(--orange-f)}
+.c2 .mains{margin-top:auto;display:flex;flex-wrap:wrap;gap:.3rem 1rem}
+.c2 .main{font-family:'Caveat',cursive;font-size:1.6rem;color:var(--gris)}
+.c2 .bas{margin-top:1.4rem;border-top:2px solid var(--noir);padding-top:.6rem;
+  display:flex;gap:1.4rem;flex-wrap:wrap;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:var(--gris)}
+.c2 .bas b{color:var(--orange-f)}
+
+/* ══════════ COUVERTURE 3 · MANUSCRIT ══════════ */
+.c3{position:absolute;inset:0}
+.c3 .fond{position:absolute;inset:0;background:url('apercus/doc3.png') center 12% / cover no-repeat;
+  filter:grayscale(1) contrast(.85);opacity:.16}
+.c3 .voile{position:absolute;inset:0;background:linear-gradient(180deg,rgba(244,240,230,.5) 0%,rgba(244,240,230,.9) 55%,var(--creme) 100%)}
+.c3 .contenu{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;
+  padding:2.8rem 2.4rem 2.6rem 3rem}
+.c3 .eyebrow{font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;font-weight:700;color:var(--orange-f)}
+.c3 .titre{font-family:'Permanent Marker',cursive;font-size:3.4rem;line-height:1;margin:.5rem 0 1rem}
+.c3 .titre .nom{color:var(--orange-f)}
+.c3 .phrase{font-family:'Fraunces',serif;font-weight:600;font-size:1.08rem;max-width:34ch;color:var(--gris)}
+.c3 .mains{font-family:'Caveat',cursive;font-size:1.45rem;color:var(--gris);margin-top:1rem;max-width:30ch;line-height:1.45}
+.c3 .chiffres{margin-top:1.4rem;display:flex;gap:1.2rem;flex-wrap:wrap;font-size:.7rem;
+  letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:var(--gris-fin)}
+.c3 .chiffres b{color:var(--noir)}
+
+/* ══════════ SOMMAIRES ══════════ */
+.s{position:absolute;inset:0;padding:2.4rem 2.2rem 2.2rem 2.6rem;display:flex;flex-direction:column}
+.s-tete{display:flex;justify-content:space-between;align-items:baseline;
+  border-bottom:2px solid var(--noir);padding-bottom:.45rem;margin-bottom:.9rem;
+  font-size:.74rem;letter-spacing:.16em;text-transform:uppercase;font-weight:700}
+.s-tete .n{color:var(--gris-fin)}
+.s-corps{flex:1;overflow-y:auto}
+
+/* A · imprimé, avec conduits de points */
+.sa-cat{display:flex;align-items:baseline;gap:.5rem;margin:.9rem 0 .3rem;
+  border-left:3px solid var(--orange);padding-left:.5rem}
+.sa-cat:first-child{margin-top:0}
+.sa-cat .nom{font-size:.74rem;letter-spacing:.14em;text-transform:uppercase;font-weight:700}
+.sa-cat .n{margin-left:auto;font-size:.7rem;color:var(--gris-fin);font-variant-numeric:tabular-nums}
+.sa-l{display:flex;align-items:baseline;gap:.35rem;padding:.28rem 0 .28rem .9rem;font-size:.92rem;cursor:pointer}
+.sa-l:hover{background:var(--creme2)}
+.sa-l .t{font-weight:500}
+.sa-l .src{color:var(--gris-fin);font-style:italic;font-size:.86em}
+.sa-l .pts{flex:1;border-bottom:1px dotted var(--filet);min-width:14px}
+.sa-l .p{color:var(--gris-fin);font-variant-numeric:tabular-nums;font-size:.86em}
+
+/* B · en chapitres, deux colonnes */
+.sb-cat{display:flex;align-items:baseline;gap:.5rem;margin:1rem 0 .35rem}
+.sb-cat:first-child{margin-top:0}
+.sb-cat .emo{font-size:1.05rem}
+.sb-cat .nom{font-family:'Permanent Marker',cursive;font-size:1.25rem}
+.sb-cat .n{margin-left:auto;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--gris-fin);font-weight:700;font-variant-numeric:tabular-nums}
+.sb-grille{columns:2;column-gap:1.4rem}
+.sb-l{break-inside:avoid;padding:.2rem 0;font-size:.88rem;cursor:pointer;color:var(--gris)}
+.sb-l:hover{color:var(--noir);text-decoration:underline}
+.sb-l .p{color:var(--filet);font-variant-numeric:tabular-nums;font-size:.82em;margin-left:.25rem}
+</style>
+</head>
+<body>
+
+<div class="entete">
+  <h1>Le livre de recettes des Dumont</h1>
+  <p>Trois couvertures, deux sommaires. Toutes les données affichées sont réelles : 122 recettes dont <strong>81 de famille</strong>, 117 manuscrits, 6 chapitres, 501 étapes, 347 ingrédients distincts. Les prénoms viennent de la colonne <code>author</code> de ta base. Réponds par un numéro et une lettre.</p>
+</div>
+
+<!-- ══════════════ COUVERTURES ══════════════ -->
+<div class="section">
+  <h2>La page de garde</h2>
+  <p>Ce que je retire dans les trois cas : le brin de lavande en SVG, vestige de la direction Provence, qui ne parle plus la même langue que le marqueur et l'orange. Ce que j'ajoute : les <strong>mains</strong>, parce qu'elles sont en base et que c'est le sujet du livre.</p>
+
+  <div class="duo">
+    <div class="cas">
+      <div class="cas-tete"><span class="cas-num">1</span><span class="cas-nom">Frontispice</span><span class="cas-axe">centré · classique</span></div>
+      <div class="page">
+        <div class="c1">
+          <div class="eyebrow">Recettes de famille</div>
+          <div class="titre">Le livre de recettes<br>des <span class="nom">Dumont</span></div>
+          <div class="filet"></div>
+          <div class="mains-lab">écrites de la main de</div>
+          <div class="mains">Maman · Manou · Denise · Caro<br>Nathalie · Véronique · Maminote</div>
+          <div class="chiffres">
+            <div class="ch"><b>122</b><span>recettes</span></div>
+            <div class="ch"><b>117</b><span>manuscrits</span></div>
+            <div class="ch"><b>6</b><span>chapitres</span></div>
+          </div>
+        </div>
+      </div>
+      <p class="cas-note">La page de titre d'un vrai livre. Calme, symétrique, les chiffres en pied comme un colophon. Les prénoms au centre sont le cœur de la page.</p>
+    </div>
+
+    <div class="cas">
+      <div class="cas-tete"><span class="cas-num">2</span><span class="cas-nom">Affiche</span><span class="cas-axe">asymétrique · graphique</span></div>
+      <div class="page">
+        <div class="c2">
+          <div class="haut"><span>Recettes de famille</span><span>depuis toujours</span></div>
+          <div class="titre"><span class="petit">Le livre de recettes des</span><span class="nom">Dumont</span></div>
+          <div class="mains">
+            <span class="main">Maman</span><span class="main">Manou</span><span class="main">Denise</span>
+            <span class="main">Caro</span><span class="main">Nathalie</span><span class="main">Véronique</span>
+            <span class="main">Maminote</span>
+          </div>
+          <div class="bas">
+            <span><b>122</b> recettes</span><span><b>81</b> de famille</span>
+            <span><b>117</b> manuscrits</span><span><b>6</b> chapitres</span>
+          </div>
+        </div>
+      </div>
+      <p class="cas-note">Le nom de famille devient l'objet graphique, énorme, seul sur sa ligne. Les prénoms s'égrènent en bas comme une liste de contributeurs. Le plus affirmé des trois.</p>
+    </div>
+
+    <div class="cas">
+      <div class="cas-tete"><span class="cas-num">3</span><span class="cas-nom">Manuscrit</span><span class="cas-axe">l'écriture en fond</span></div>
+      <div class="page">
+        <div class="c3">
+          <div class="fond"></div>
+          <div class="voile"></div>
+          <div class="contenu">
+            <div class="eyebrow">Recettes de famille</div>
+            <div class="titre">Le livre de recettes<br>des <span class="nom">Dumont</span></div>
+            <div class="phrase">Cent vingt-deux recettes, cent dix-sept feuillets écrits à la main, et tout ce qui va avec.</div>
+            <div class="mains">de la main de Maman, Manou, Denise, Caro, Nathalie, Véronique et Maminote</div>
+            <div class="chiffres">
+              <span><b>122</b> recettes</span><span><b>81</b> de famille</span><span><b>6</b> chapitres</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="cas-note">Un vrai manuscrit de la base en fond, désaturé et voilé. On voit immédiatement de quoi le livre est fait, avant même d'avoir tourné une page. Le plus émouvant, le plus risqué aussi : si le voile est mal réglé, le titre devient dur à lire.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ SOMMAIRES ══════════════ -->
+<div class="section">
+  <h2>Le sommaire</h2>
+  <p>Il fait face à la page de garde, sur la page de droite. Le problème à résoudre : <strong>122 entrées</strong> dans une demi-page. L'actuel les empile en une colonne avec un conduit de points, ce qui donne une liste interminable qu'il faut faire défiler.</p>
+
+  <div class="duo">
+    <div class="cas">
+      <div class="cas-tete"><span class="cas-num">A</span><span class="cas-nom">Imprimé</span><span class="cas-axe">une colonne · conduits de points</span></div>
+      <div class="page">
+        <div class="s">
+          <div class="s-tete"><span>Sommaire</span><span class="n">122 recettes</span></div>
+          <div class="s-corps">
+            <div class="sa-cat"><span class="nom">Entrées &amp; Apéritifs</span><span class="n">17</span></div>
+            <div class="sa-l"><span class="t">Aubergines Frites</span><span class="pts"></span><span class="p">1</span></div>
+            <div class="sa-l"><span class="t">Aubergines Roulées au Fromage Frais</span><span class="pts"></span><span class="p">3</span></div>
+            <div class="sa-l"><span class="t">Foie Gras, Huîtres et Bouillon d'Artichaut</span><span class="src">Robuchon</span><span class="pts"></span><span class="p">5</span></div>
+            <div class="sa-l"><span class="t">Granité de Tomate au Basilic</span><span class="pts"></span><span class="p">7</span></div>
+            <div class="sa-l"><span class="t">Tartare d'Huîtres</span><span class="src">C. Constant</span><span class="pts"></span><span class="p">9</span></div>
+            <div class="sa-cat"><span class="nom">Plats</span><span class="n">30</span></div>
+            <div class="sa-l"><span class="t">Blanquette de Veau Traditionnelle</span><span class="pts"></span><span class="p">11</span></div>
+            <div class="sa-l"><span class="t">Bœuf Bourguignon</span><span class="pts"></span><span class="p">13</span></div>
+            <div class="sa-l"><span class="t">Cassoulet</span><span class="pts"></span><span class="p">15</span></div>
+            <div class="sa-l"><span class="t">Choucroute</span><span class="src">Denise</span><span class="pts"></span><span class="p">17</span></div>
+            <div class="sa-l"><span class="t">Daube de Joue de Bœuf</span><span class="pts"></span><span class="p">19</span></div>
+            <div class="sa-l"><span class="t">Pâté en Croûte de Lièvre au Foie Gras</span><span class="pts"></span><span class="p">21</span></div>
+          </div>
+        </div>
+      </div>
+      <p class="cas-note">Fidèle à un livre imprimé, avec la provenance en italique et la page en regard. Mais il faut défiler longtemps : à ce rythme, les desserts sont à quinze écrans.</p>
+    </div>
+
+    <div class="cas">
+      <div class="cas-tete"><span class="cas-num">B</span><span class="cas-nom">Chapitres</span><span class="cas-axe">deux colonnes · titres au marqueur</span></div>
+      <div class="page">
+        <div class="s">
+          <div class="s-tete"><span>Sommaire</span><span class="n">122 recettes · 6 chapitres</span></div>
+          <div class="s-corps">
+            <div class="sb-cat"><span class="emo">🥗</span><span class="nom">Entrées</span><span class="n">17 recettes</span></div>
+            <div class="sb-grille">
+              <div class="sb-l">Aubergines Frites<span class="p">1</span></div>
+              <div class="sb-l">Aubergines Roulées<span class="p">3</span></div>
+              <div class="sb-l">Foie Gras &amp; Huîtres<span class="p">5</span></div>
+              <div class="sb-l">Granité de Tomate<span class="p">7</span></div>
+              <div class="sb-l">Tartare d'Huîtres<span class="p">9</span></div>
+              <div class="sb-l">Terrine de Campagne<span class="p">11</span></div>
+              <div class="sb-l">Tian Provençal<span class="p">13</span></div>
+              <div class="sb-l">Zaalouk d'Aubergine<span class="p">15</span></div>
+            </div>
+            <div class="sb-cat"><span class="emo">🍲</span><span class="nom">Plats</span><span class="n">30 recettes</span></div>
+            <div class="sb-grille">
+              <div class="sb-l">Blanquette de Veau<span class="p">17</span></div>
+              <div class="sb-l">Bœuf Bourguignon<span class="p">19</span></div>
+              <div class="sb-l">Cassoulet<span class="p">21</span></div>
+              <div class="sb-l">Choucroute Denise<span class="p">23</span></div>
+              <div class="sb-l">Daube de Joue<span class="p">25</span></div>
+              <div class="sb-l">Pâté en Croûte<span class="p">27</span></div>
+              <div class="sb-l">Osso Bucco<span class="p">29</span></div>
+              <div class="sb-l">Pot-au-feu<span class="p">31</span></div>
+            </div>
+            <div class="sb-cat"><span class="emo">🍰</span><span class="nom">Desserts</span><span class="n">48 recettes</span></div>
+            <div class="sb-grille">
+              <div class="sb-l">Banoffee Pie<span class="p">33</span></div>
+              <div class="sb-l">Charlotte au Chocolat<span class="p">35</span></div>
+              <div class="sb-l">Cheesecake<span class="p">37</span></div>
+              <div class="sb-l">Far Breton<span class="p">39</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="cas-note">Deux fois plus d'entrées visibles à la fois, et les chapitres au marqueur donnent des repères pour l'œil qui défile. La provenance disparaît, faute de place : c'est le prix. Les 48 desserts restent le vrai défi.</p>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
