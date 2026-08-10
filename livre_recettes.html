@@ -3,28 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Le Livre de Recettes</title>
+<title>Le livre de recettes des Dumont</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500&family=Caveat:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Archivo:wght@400;500;600;700&family=Caveat:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
 <header class="topbar" role="banner">
-  <div class="site-logo" aria-label="Le Livre de Recettes">Le Livre de Recettes</div>
+  <button class="site-logo" onclick="retourMenu()" title="Revenir au menu du livre">Le livre de recettes des Dumont</button>
   <div class="topbar-right">
-    <label for="search" class="sr-only">Rechercher une recette</label>
-    <input type="search" class="search-input" id="search" placeholder="Rechercher…" aria-label="Rechercher une recette">
-    <nav class="filters" aria-label="Filtrer par catégorie">
-      <button class="cat-btn active" data-cat="0" aria-pressed="true">Toutes</button>
-      <button class="cat-btn" data-cat="1" aria-pressed="false">Entrées</button>
-      <button class="cat-btn" data-cat="2" aria-pressed="false">Plats</button>
-      <button class="cat-btn" data-cat="3" aria-pressed="false">Poissons</button>
-      <button class="cat-btn" data-cat="4" aria-pressed="false">Desserts</button>
-      <button class="cat-btn" data-cat="fav" aria-pressed="false">★ Favoris</button>
-    </nav>
     <div class="page-counter" id="pageCounter" aria-live="polite" aria-label="Position dans le livre">— / —</div>
-    <button class="submit-btn" onclick="openSubmit()" aria-haspopup="dialog" aria-label="Proposer une recette">+ Recette</button>
+    <button class="bar-btn" onclick="openSearch()" aria-haspopup="dialog">Rechercher</button>
+    <button class="bar-btn" onclick="openTOC()" aria-haspopup="dialog">Sommaire</button>
+    <button class="bar-btn bar-btn--prim" id="submitBtn" onclick="openSubmit()" aria-haspopup="dialog" aria-label="Proposer une recette">+ Recette</button>
+    <div class="auth-zone" id="authZone" aria-live="polite"></div>
   </div>
 </header>
 
@@ -50,67 +44,85 @@
 
 <button class="nav-arrow nav-prev" id="prevBtn" onclick="changePage(-1)" aria-label="Recette précédente" disabled>‹</button>
 <button class="nav-arrow nav-next" id="nextBtn" onclick="changePage(1)" aria-label="Recette suivante">›</button>
-<button class="toc-btn" onclick="openTOC()" aria-haspopup="dialog">Table des matières</button>
 
 <div class="toc-overlay" id="tocOverlay" role="dialog" aria-modal="true" aria-label="Table des matières" onclick="closeTOCOutside(event)">
   <div class="toc-panel">
     <div class="toc-panel-header">
-      <div class="toc-panel-title">Table des Matières</div>
-      <button class="toc-close" onclick="closeTOC()" aria-label="Fermer la table des matières">Fermer ✕</button>
+      <div class="toc-panel-title">Sommaire</div>
+      <button class="toc-close" onclick="closeTOC()" aria-label="Fermer le sommaire">Fermer ✕</button>
     </div>
-    <div class="toc-body" id="tocBody"></div>
+
+    <div class="panel-section">
+      <h3 class="panel-titre">Restreindre le livre</h3>
+      <nav class="filters" id="tocFilters" aria-label="Filtrer par catégorie"></nav>
+    </div>
+
+    <div class="panel-section">
+      <h3 class="panel-titre">Index</h3>
+      <p class="panel-aide">Un livre de cuisine sert deux besoins : trouver une recette précise, ou partir d'un ingrédient qu'on a sous la main. D'où plusieurs entrées.</p>
+      <div class="index-axes" role="tablist" aria-label="Trier l'index">
+        <button class="axe-btn active" data-axe="chapitre" role="tab" aria-selected="true">Chapitre</button>
+        <button class="axe-btn" data-axe="alpha" role="tab" aria-selected="false">A → Z</button>
+        <button class="axe-btn" data-axe="ingredient" role="tab" aria-selected="false">Ingrédient</button>
+        <button class="axe-btn" data-axe="main" role="tab" aria-selected="false">Main</button>
+        <button class="axe-btn" data-axe="temps" role="tab" aria-selected="false">Temps</button>
+      </div>
+      <div class="toc-body" id="tocBody"></div>
+    </div>
   </div>
 </div>
 
-<div class="submit-overlay" id="submitOverlay" role="dialog" aria-modal="true" aria-label="Proposer une recette" onclick="closeSubmitOutside(event)">
-  <div class="submit-panel">
+<div class="search-overlay" id="searchOverlay" role="dialog" aria-modal="true" aria-label="Rechercher une recette" onclick="closeSearchOutside(event)">
+  <div class="search-panel">
+    <div class="search-bar">
+      <span class="search-icon" aria-hidden="true">⌕</span>
+      <label for="search" class="sr-only">Rechercher une recette, un ingrédient</label>
+      <input type="search" id="search" class="search-field" placeholder="Une recette, un ingrédient, un mot-clé…"
+             autocomplete="off" aria-controls="searchResults">
+      <span class="search-count" id="searchCount" aria-live="polite"></span>
+      <button class="search-close" onclick="closeSearch()" aria-label="Fermer la recherche">Fermer ✕</button>
+    </div>
+    <div class="search-results" id="searchResults" role="listbox" aria-label="Résultats"></div>
+  </div>
+</div>
+
+<div class="submit-overlay" id="submitOverlay" role="dialog" aria-modal="true" aria-label="Ajouter une recette au livre" onclick="closeSubmitOutside(event)">
+  <div class="submit-panel" id="submitPanel">
     <div class="submit-panel-header">
       <div>
-        <div class="submit-panel-title">Proposer une recette</div>
-        <div class="submit-panel-subtitle">Elle sera relue et ajoutée au livre par l'administrateur.</div>
+        <div class="submit-panel-title">Ajouter une recette</div>
+        <div class="submit-panel-subtitle">Photographie la fiche, ou dépose son PDF. Rien à recopier.</div>
       </div>
       <button class="submit-close" onclick="closeSubmit()" aria-label="Fermer">Fermer ✕</button>
     </div>
-    <form class="submit-form" onsubmit="submitRecipe(event)">
-      <div class="submit-field">
-        <label class="submit-label" for="sf-title">Nom de la recette *</label>
-        <input class="submit-input" id="sf-title" type="text" required placeholder="Ex : Tarte aux pommes de mamie">
+
+    <div id="depotVue">
+      <div class="depot" id="depotZone">
+        <input type="file" id="depotInput" accept="image/*,application/pdf" multiple hidden onchange="fichiersChoisis(this)">
+        <input type="file" id="depotCamera" accept="image/*" capture="environment" multiple hidden onchange="fichiersChoisis(this)">
+        <p class="depot-titre">Dépose ici la photo ou le PDF de la recette</p>
+        <p class="depot-aide">Plusieurs feuillets pour la même recette ? Ajoute-les tous, ils resteront ensemble.</p>
+        <div class="depot-boutons">
+          <button class="bar-btn bar-btn--prim" onclick="ouvrirSelecteur('depotInput')">Choisir un fichier</button>
+          <button class="bar-btn depot-camera" onclick="ouvrirSelecteur('depotCamera')">Prendre une photo</button>
+        </div>
+        <p class="depot-tech">Photos et PDF, jusqu'à 15 Mo par page.</p>
       </div>
-      <div class="submit-field">
-        <label class="submit-label" for="sf-cat">Catégorie</label>
-        <select class="submit-select" id="sf-cat">
-          <option value="">— Choisir —</option>
-          <option value="1">Entrée</option>
-          <option value="2">Plat</option>
-          <option value="3">Poisson</option>
-          <option value="4">Dessert</option>
-          <option value="5">Gibier</option>
-          <option value="6">Accompagnement</option>
-        </select>
-      </div>
-      <div class="submit-field">
-        <label class="submit-label" for="sf-author">Ton prénom</label>
-        <input class="submit-input" id="sf-author" type="text" placeholder="Ex : Tante Marie">
-      </div>
-      <div class="submit-field">
-        <label class="submit-label" for="sf-ingredients">Ingrédients</label>
-        <textarea class="submit-textarea" id="sf-ingredients" rows="4" placeholder="Un par ligne :&#10;200g beurre&#10;3 œufs&#10;…"></textarea>
-      </div>
-      <div class="submit-field">
-        <label class="submit-label" for="sf-steps">Préparation</label>
-        <textarea class="submit-textarea" id="sf-steps" rows="5" placeholder="Décris les étapes de la recette…"></textarea>
-      </div>
-      <div class="submit-field">
-        <label class="submit-label" for="sf-notes">Notes (optionnel)</label>
-        <textarea class="submit-textarea" id="sf-notes" rows="2" placeholder="Conseils, variantes, souvenirs…"></textarea>
-      </div>
+
+      <div class="depot-liste" id="depotListe"></div>
+
       <div id="submitFeedback" class="submit-feedback" aria-live="polite"></div>
-      <button type="submit" class="submit-form-btn">Envoyer la recette</button>
-    </form>
+      <button class="submit-form-btn" id="depotEnvoi" onclick="analyserDepot()" hidden>Lire la recette</button>
+    </div>
+
+    <div class="apercu" id="depotApercu" hidden></div>
+
+    <div class="depot-fini" id="depotFini" role="status" tabindex="-1" hidden></div>
   </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.js"></script>
 <script src="config.js"></script>
 <script src="app.js"></script>
 </body>
