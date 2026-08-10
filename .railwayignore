@@ -1,0 +1,22 @@
+# Ce qui ne doit jamais partir sur le serveur.
+
+# Secrets : les clés viennent des variables d'environnement Railway.
+.env
+.env.local
+config.js
+famille.txt
+
+# Outillage de développement
+.claude/
+supabase/
+.git/
+.DS_Store
+
+# Anciennes versions et maquettes : conservées dans le repo pour l'historique,
+# mais pas exposées sur un site public.
+livre_recettes_1.html
+livre_recettes_2.html
+demos/
+
+# Illustrations de travail : jamais servies
+illustrations/

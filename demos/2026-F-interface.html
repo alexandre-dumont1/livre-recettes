@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interface — barre, filtres, recherche, portions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Archivo:wght@400;500;600;700&family=Caveat:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   Chaque bloc est numéroté : réponds par des numéros.
+   Contenu réel : les 6 catégories de la base avec leurs emojis et
+   leurs effectifs, et la Banoffee avec ses 7 ingrédients et ses
+   8 personnes.
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+  --creme:#f4f0e6; --creme2:#ebe6d9; --plateau:#ddd7c8;
+  --noir:#14120e; --gris:#4a453c; --gris-fin:#6b6459;
+  --orange:#d1500f; --orange-f:#a83d08; --filet:#cfc7b4;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--plateau);color:var(--noir);font-family:'Archivo',system-ui,sans-serif;
+  font-size:16px;line-height:1.6;padding-bottom:6rem}
+.entete{background:var(--noir);color:#cfc7b4;padding:1.5rem 1.8rem}
+.entete h1{font-size:1.15rem}
+.entete p{color:#a09889;font-size:.94rem;margin-top:.35rem;max-width:80ch}
+.section{max-width:1180px;margin:2.6rem auto 0;padding:0 1.8rem}
+.section > h2{font-family:'Permanent Marker',cursive;font-size:1.9rem;margin-bottom:.2rem}
+.section > p{color:var(--gris);font-size:.95rem;max-width:76ch;margin-bottom:1.2rem}
+.cas{margin-bottom:2.2rem}
+.cas-tete{display:flex;align-items:baseline;gap:.7rem;margin-bottom:.5rem}
+.cas-num{font-family:'Permanent Marker',cursive;font-size:1.7rem;color:var(--orange-f);line-height:1}
+.cas-nom{font-weight:700}
+.cas-axe{margin-left:auto;font-size:.74rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gris-fin);font-weight:600}
+.cas-note{font-size:.88rem;color:var(--gris);margin-top:.5rem}
+.cadre{border:1px solid var(--filet);background:var(--creme);overflow:hidden}
+.faux-page{background:var(--creme);padding:1.4rem 1.6rem;border-top:1px solid var(--filet)}
+.faux-titre{font-family:'Permanent Marker',cursive;font-size:2.2rem;line-height:1.05}
+.faux-texte{color:var(--gris-fin);font-size:.9rem;margin-top:.3rem}
+
+/* ══════════ BARRES ══════════ */
+/* 1 · Papier : la barre devient la tête de chapitre du livre */
+.b1{background:var(--creme);border-bottom:2px solid var(--noir);
+  display:flex;align-items:center;gap:1.2rem;padding:.7rem 1.2rem;flex-wrap:wrap}
+.b1 .logo{font-family:'Permanent Marker',cursive;font-size:1.3rem}
+.b1 .champ{flex:1;min-width:160px;display:flex;align-items:center;gap:.4rem;
+  border-bottom:1.5px solid var(--filet);padding-bottom:.2rem}
+.b1 .champ input{border:0;background:none;font:inherit;font-size:.95rem;width:100%;outline:none;min-height:34px}
+.b1 .champ input::placeholder{color:var(--gris-fin)}
+.b1 .liens{display:flex;gap:.9rem;flex-wrap:wrap}
+.b1 .lien{font-size:.76rem;letter-spacing:.1em;text-transform:uppercase;font-weight:700;
+  color:var(--gris);cursor:pointer;padding:.4rem 0;min-height:34px}
+.b1 .lien.on{color:var(--noir);box-shadow:inset 0 -2px 0 var(--orange)}
+.b1 .cta{background:var(--noir);color:var(--creme);border:0;font:inherit;font-size:.74rem;
+  font-weight:700;letter-spacing:.1em;text-transform:uppercase;min-height:44px;padding:0 .9rem;cursor:pointer}
+
+/* 2 · Épurée : tout le reste part dans le sommaire */
+.b2{background:var(--creme);border-bottom:1px solid var(--filet);
+  display:flex;align-items:center;gap:1rem;padding:.7rem 1.2rem}
+.b2 .logo{font-family:'Permanent Marker',cursive;font-size:1.3rem}
+.b2 .vide{flex:1}
+.b2 button{background:none;border:1.5px solid var(--noir);font:inherit;font-size:.74rem;
+  font-weight:700;letter-spacing:.1em;text-transform:uppercase;min-height:44px;padding:0 .9rem;cursor:pointer}
+.b2 .primaire{background:var(--noir);color:var(--creme);border-color:var(--noir)}
+
+/* 3 · Deux étages : filtres en pastilles défilables */
+.b3-haut{background:var(--creme);display:flex;align-items:center;gap:1rem;padding:.65rem 1.2rem}
+.b3-haut .logo{font-family:'Permanent Marker',cursive;font-size:1.3rem}
+.b3-haut .champ{flex:1;display:flex;align-items:center;gap:.4rem;background:#fff;
+  border:1px solid var(--filet);padding:0 .7rem;min-height:38px}
+.b3-haut .champ input{border:0;background:none;font:inherit;width:100%;outline:none;min-height:36px}
+.b3-haut .cta{background:var(--orange);color:#fff;border:0;font:inherit;font-size:.74rem;
+  font-weight:700;letter-spacing:.1em;text-transform:uppercase;min-height:44px;padding:0 .9rem;cursor:pointer}
+.b3-bas{background:var(--creme2);border-top:1px solid var(--filet);border-bottom:2px solid var(--noir);
+  display:flex;gap:.4rem;padding:.55rem 1.2rem;overflow-x:auto}
+.chip{display:flex;align-items:center;gap:.35rem;white-space:nowrap;cursor:pointer;
+  background:var(--creme);border:1px solid var(--filet);border-radius:999px;
+  padding:0 .75rem;min-height:36px;font-size:.8rem;font-weight:600}
+.chip .n{font-size:.7rem;color:var(--gris-fin);font-variant-numeric:tabular-nums}
+.chip.on{background:var(--noir);color:var(--creme);border-color:var(--noir)}
+.chip.on .n{color:#bdb5a5}
+
+/* 4 · Sombre (l'actuelle, nettoyée) */
+.b4{background:var(--noir);color:#f4f0e6;display:flex;align-items:center;gap:1rem;
+  padding:0 1.2rem;min-height:48px;flex-wrap:wrap}
+.b4 .logo{font-family:'Permanent Marker',cursive;font-size:1.2rem}
+.b4 input{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.22);
+  color:#f4f0e6;font:inherit;font-size:.92rem;padding:.3rem .6rem;min-height:34px;width:170px}
+.b4 .lien{font-size:.74rem;letter-spacing:.1em;text-transform:uppercase;font-weight:700;
+  color:rgba(255,240,220,.72);cursor:pointer;padding:.4rem .4rem}
+.b4 .lien.on{color:#fff;box-shadow:inset 0 -2px 0 var(--orange)}
+.b4 .cta{background:var(--orange);color:#fff;border:0;font:inherit;font-size:.74rem;
+  font-weight:700;letter-spacing:.1em;text-transform:uppercase;min-height:44px;padding:0 .8rem;cursor:pointer}
+
+/* ══════════ PORTIONS ══════════ */
+.p-bloc{background:var(--creme);border:1px solid var(--filet);padding:1.2rem 1.4rem}
+.p-ligne{display:flex;gap:.8rem;align-items:baseline;padding:.28rem 0;font-size:.95rem;color:var(--gris)}
+.p-q{min-width:82px;text-align:right;font-weight:600;color:var(--noir);font-variant-numeric:tabular-nums}
+.p-titre{font-size:.76rem;letter-spacing:.14em;text-transform:uppercase;font-weight:700;
+  border-bottom:1.5px solid var(--noir);padding-bottom:.3rem;margin-bottom:.7rem}
+
+.pa{display:flex;align-items:center;gap:.35rem;margin-bottom:1rem}
+.pa .lab{font-size:.74rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gris-fin);margin-right:.4rem}
+.pa button{min-width:44px;min-height:44px;font-family:'Fraunces',serif;font-size:1rem;
+  border:1px solid var(--filet);background:none;cursor:pointer}
+.pa button.on{background:var(--noir);color:var(--creme);border-color:var(--noir);font-weight:700}
+
+.pb{display:flex;align-items:center;gap:.7rem;margin-bottom:1rem;flex-wrap:wrap}
+.pb .pour{font-family:'Fraunces',serif;font-weight:600;font-size:1.15rem}
+.pb .nb{font-family:'Permanent Marker',cursive;font-size:1.9rem;color:var(--orange-f);
+  min-width:2.2ch;text-align:center;line-height:1}
+.pb .step{width:44px;height:44px;border:1.5px solid var(--noir);background:none;
+  font-size:1.3rem;line-height:1;cursor:pointer}
+.pb .reset{margin-left:.3rem;background:none;border:0;text-decoration:underline;
+  font:inherit;font-size:.8rem;color:var(--gris-fin);cursor:pointer;min-height:44px}
+
+.pc{display:flex;align-items:center;gap:.4rem;margin-bottom:1rem;flex-wrap:wrap}
+.pc .lab{font-size:.74rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gris-fin);margin-right:.3rem}
+.pc button{min-height:44px;padding:0 .8rem;border:1px solid var(--filet);background:none;
+  font:inherit;font-size:.92rem;cursor:pointer;display:flex;align-items:center;gap:.3rem}
+.pc button .u{font-size:.72rem;color:var(--gris-fin);text-transform:uppercase;letter-spacing:.08em}
+.pc button.on{background:var(--noir);color:var(--creme);border-color:var(--noir);font-weight:700}
+.pc button.on .u{color:#bdb5a5}
+
+/* ══════════ RECHERCHE ══════════ */
+.r-cadre{background:var(--creme);border:1px solid var(--filet)}
+.r-barre{display:flex;align-items:center;gap:.6rem;padding:.7rem 1.1rem;border-bottom:1px solid var(--filet)}
+.r-barre input{flex:1;border:0;background:none;font:inherit;font-size:1.02rem;outline:none;min-height:38px}
+.r-res{padding:.5rem 0}
+.r-groupe{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;font-weight:700;
+  color:var(--orange-f);padding:.5rem 1.1rem .2rem}
+.r-item{display:flex;align-items:baseline;gap:.6rem;padding:.5rem 1.1rem;cursor:pointer;min-height:44px}
+.r-item:hover{background:var(--creme2)}
+.r-item .t{font-weight:600}
+.r-item .pourquoi{margin-left:auto;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--gris-fin);white-space:nowrap}
+.r-item mark{background:rgba(209,80,15,.22);color:inherit;padding:0 .1rem}
+.r-vide{padding:1rem 1.1rem;color:var(--gris-fin);font-size:.9rem}
+</style>
+</head>
+<body>
+
+<div class="entete">
+  <h1>Interface — barre du haut, filtres, recherche, portions</h1>
+  <p>Contenu réel : les 6 catégories de la base avec leurs emojis et leurs effectifs, la Banoffee et ses 7 ingrédients pour 8 personnes. Les ajusteurs de portions sont fonctionnels, clique dessus. Réponds par des numéros, un par section.</p>
+</div>
+
+<!-- ══════════════════ BARRE ══════════════════ -->
+<div class="section">
+  <h2>La barre du haut</h2>
+  <p>Le problème actuel : onze éléments interactifs dans 48 pixels, et un bandeau noir d'application web posé sur un livre en papier crème. C'est le dernier vestige de l'ancien thème sombre.</p>
+
+  <div class="cas">
+    <div class="cas-tete"><span class="cas-num">1</span><span class="cas-nom">Papier</span><span class="cas-axe">la barre devient la tête de chapitre</span></div>
+    <div class="cadre">
+      <div class="b1">
+        <span class="logo">Le Livre de Recettes</span>
+        <label class="champ"><input type="search" placeholder="Rechercher une recette, un ingrédient…"></label>
+        <nav class="liens">
+          <span class="lien on">Toutes</span><span class="lien">Entrées</span><span class="lien">Plats</span>
+          <span class="lien">Poissons</span><span class="lien">Desserts</span><span class="lien">★</span>
+        </nav>
+        <button class="cta">+ Recette</button>
+      </div>
+      <div class="faux-page"><div class="faux-titre">Banoffee Pie</div><div class="faux-texte">de la main de Véronique Marron</div></div>
+    </div>
+    <p class="cas-note">Plus de rupture entre le bandeau et la page : le livre commence en haut de l'écran. Filet noir épais et soulignement orange pour la catégorie active. Le champ de recherche perd sa boîte et devient une ligne, comme sur un formulaire imprimé.</p>
+  </div>
+
+  <div class="cas">
+    <div class="cas-tete"><span class="cas-num">2</span><span class="cas-nom">Épurée</span><span class="cas-axe">tout le reste dans le sommaire</span></div>
+    <div class="cadre">
+      <div class="b2">
+        <span class="logo">Le Livre de Recettes</span>
+        <span class="vide"></span>
+        <button>Rechercher</button>
+        <button>Sommaire</button>
+        <button class="primaire">+ Recette</button>
+      </div>
+      <div class="faux-page"><div class="faux-titre">Banoffee Pie</div><div class="faux-texte">de la main de Véronique Marron</div></div>
+    </div>
+    <p class="cas-note">Trois boutons, rien d'autre. Les filtres et les favoris rejoignent le panneau Sommaire, qui existe déjà et qu'on n'utilise presque pas. Le plus calme, mais un clic de plus pour filtrer.</p>
+  </div>
+
+  <div class="cas">
+    <div class="cas-tete"><span class="cas-num">3</span><span class="cas-nom">Deux étages</span><span class="cas-axe">filtres en pastilles défilables</span></div>
+    <div class="cadre">
+      <div class="b3-haut">
+        <span class="logo">Le Livre de Recettes</span>
+        <label class="champ"><input type="search" placeholder="Rechercher…"></label>
+        <button class="cta">+ Recette</button>
+      </div>
+      <div class="b3-bas">
+        <span class="chip on">Toutes <span class="n">122</span></span>
+        <span class="chip">🥗 Entrées <span class="n">17</span></span>
+        <span class="chip">🍲 Plats <span class="n">30</span></span>
+        <span class="chip">🥦 Accompagnements <span class="n">10</span></span>
+        <span class="chip">🐟 Poissons <span class="n">16</span></span>
+        <span class="chip">🍰 Desserts <span class="n">48</span></span>
+        <span class="chip">🦆 Gibier <span class="n">1</span></span>
+        <span class="chip">★ Favoris</span>
+      </div>
+      <div class="faux-page"><div class="faux-titre">Banoffee Pie</div><div class="faux-texte">de la main de Véronique Marron</div></div>
+    </div>
+    <p class="cas-note">Les six catégories tiennent enfin, avec leur emoji et leur effectif. La rangée défile horizontalement sur téléphone. C'est le seul des quatre où « Gibier » et « Accompagnements » sont visibles sans compromis, et où l'on voit combien de recettes se cachent derrière chaque filtre.</p>
+  </div>
+
+  <div class="cas">
+    <div class="cas-tete"><span class="cas-num">4</span><span class="cas-nom">Sombre resserrée</span><span class="cas-axe">l'actuelle, nettoyée</span></div>
+    <div class="cadre">
+      <div class="b4">
+        <span class="logo">Le Livre de Recettes</span>
+        <input type="search" placeholder="Rechercher…">
+        <span class="lien on">Toutes</span><span class="lien">Entrées</span><span class="lien">Plats</span>
+        <span class="lien">Poissons</span><span class="lien">Desserts</span><span class="lien">★</span>
+        <button class="cta">+ Recette</button>
+      </div>
+      <div class="faux-page"><div class="faux-titre">Banoffee Pie</div><div class="faux-texte">de la main de Véronique Marron</div></div>
+    </div>
+    <p class="cas-note">Pour comparaison. Le bandeau noir donne du contraste et de la tenue, mais il pose une interface d'application par-dessus un objet en papier. Regarde la couture entre le noir et la crème.</p>
+  </div>
+</div>
+
+<!-- ══════════════════ PORTIONS ══════════════════ -->
+<div class="section">
+  <h2>L'ajusteur de portions</h2>
+  <p>Le problème actuel : « ×2 » ne dit jamais pour combien de personnes on cuisine. Et 17 recettes sur 122 n'ont aucun nombre de personnes en base, il faut donc que le dispositif tienne aussi sans cette donnée. Clique, c'est fonctionnel.</p>
+
+  <div class="cas">
+    <div class="cas-tete"><span class="cas-num">A</span><span class="cas-nom">Multiplicateurs</span><span class="cas-axe">l'actuel</span></div>
+    <div class="p-bloc">
+      <div class="pa" data-groupe="a">
+        <span class="lab">Portions</span>
+        <button data-m="0.5">½</button><button data-m="1" class="on">×1</button>
+        <button data-m="2">×2</button><button data-m="3">×3</button>
+      </div>
+      <div class="p-titre">Ingrédients</div>
+      <div class="liste" data-liste="a"></div>
+    </div>
+    <p class="cas-note">Marche, mais demande un calcul mental : « ×2 » de combien ? Fonctionne en revanche sur les 17 recettes sans nombre de personnes.</p>
+  </div>
+
+  <div class="cas">
+    <div class="cas-tete"><span class="cas-num">B</span><span class="cas-nom">Compteur de personnes</span><span class="cas-axe">on cuisine pour des gens, pas pour un facteur</span></div>
+    <div class="p-bloc">
+      <div class="pb" data-groupe="b">
+        <span class="pour">Pour</span>
+        <button class="step" data-d="-1" aria-label="Une personne de moins">−</button>
+        <span class="nb" data-nb>8</span>
+        <button class="step" data-d="1" aria-label="Une personne de plus">+</button>
+        <span class="pour">personnes</span>
+        <button class="reset" data-reset>revenir à 8</button>
+      </div>
+      <div class="p-titre">Ingrédients</div>
+      <div class="liste" data-liste="b"></div>
+    </div>
+    <p class="cas-note">On règle le nombre de convives, les quantités suivent. Le chiffre au marqueur reprend le geste du livre. Repli nécessaire pour les 17 recettes sans nombre de personnes : on retomberait sur les multiplicateurs.</p>
+  </div>
+
+  <div class="cas">
+    <div class="cas-tete"><span class="cas-num">C</span><span class="cas-nom">Nombres réels</span><span class="cas-axe">multiplicateurs, mais exprimés en personnes</span></div>
+    <div class="p-bloc">
+      <div class="pc" data-groupe="c">
+        <span class="lab">Pour</span>
+        <button data-m="0.5">4 <span class="u">pers.</span></button>
+        <button data-m="1" class="on">8 <span class="u">pers.</span></button>
+        <button data-m="2">16 <span class="u">pers.</span></button>
+        <button data-m="3">24 <span class="u">pers.</span></button>
+      </div>
+      <div class="p-titre">Ingrédients</div>
+      <div class="liste" data-liste="c"></div>
+    </div>
+    <p class="cas-note">Le compromis : la simplicité d'un choix parmi quatre, mais libellé en personnes réelles. Aucun calcul mental, aucun bouton de plus. Sans nombre de personnes en base, les libellés retombent sur ½ ×1 ×2 ×3.</p>
+  </div>
+</div>
+
+<!-- ══════════════════ RECHERCHE ══════════════════ -->
+<div class="section">
+  <h2>La recherche</h2>
+  <p>Le problème actuel : la recherche fouille les titres, les mots-clés <strong>et les ingrédients</strong>, mais l'utilisateur ne voit jamais pourquoi une recette est ressortie. Chercher « caramel » remonte la Banoffee sans que rien ne l'explique.</p>
+
+  <div class="cas">
+    <div class="cas-tete"><span class="cas-num">I</span><span class="cas-nom">Filtrage silencieux</span><span class="cas-axe">l'actuel</span></div>
+    <div class="r-cadre">
+      <div class="r-barre"><span>🔍</span><input type="search" value="caramel" readonly></div>
+      <div class="r-vide">Le livre se réduit à 3 recettes. Aucune explication, aucun aperçu : il faut tourner les pages pour découvrir lesquelles.</div>
+    </div>
+  </div>
+
+  <div class="cas">
+    <div class="cas-tete"><span class="cas-num">II</span><span class="cas-nom">Panneau de résultats</span><span class="cas-axe">on montre pourquoi ça correspond</span></div>
+    <div class="r-cadre">
+      <div class="r-barre"><span>🔍</span><input type="search" value="caramel" readonly><span style="font-size:.8rem;color:var(--gris-fin)">3 résultats</span></div>
+      <div class="r-res">
+        <div class="r-groupe">🍰 Desserts &amp; Pâtisseries</div>
+        <div class="r-item"><span class="t">Banoffee Pie</span><span class="pourquoi">ingrédient · confiture de lait</span></div>
+        <div class="r-item"><span class="t">Moelleux Tiède au Chocolat et <mark>Caramel</mark> Beurre Salé</span><span class="pourquoi">dans le titre</span></div>
+        <div class="r-item"><span class="t">Banoffee Pie <span style="color:var(--gris-fin);font-weight:400">(version Seveuh's Blog)</span></span><span class="pourquoi">mot-clé · caramel</span></div>
+      </div>
+    </div>
+    <p class="cas-note">Trois gains : on voit les résultats sans tourner les pages, on comprend pourquoi chacun correspond, et on saute directement au bon. Les groupes reprennent les catégories. C'est aussi le seul endroit où la recherche par ingrédient devient visible, alors qu'elle existe déjà.</p>
+  </div>
+</div>
+
+<script>
+// Les trois ajusteurs travaillent sur les vrais ingrédients de la recette #12.
+const INGR = [
+  { g:'Base',      q:150, u:'g',      n:'digestive biscuits' },
+  { g:'Base',      q:75,  u:'g',      n:'beurre demi-sel' },
+  { g:'Caramel',   q:397, u:'g',      n:'lait concentré sucré' },
+  { g:'Garniture', q:4,   u:'',       n:'bananes' },
+  { g:'Chantilly', q:250, u:'ml',     n:'crème fleurette' },
+  { g:'Chantilly', q:1,   u:'c. à s.',n:'sucre glace' },
+  { g:'Service',   q:null,u:'',       n:'cacao en poudre' },
+];
+const BASE_PERS = 8;
+
+function arrondi(v) {
+  const r = Math.round(v * 100) / 100;
+  return Number.isInteger(r) ? String(r) : String(r).replace('.', ',');
+}
+
+function rendre(cle, mult) {
+  const hote = document.querySelector(`[data-liste="${cle}"]`);
+  let groupe = null, html = '';
+  for (const i of INGR) {
+    if (i.g !== groupe) {
+      groupe = i.g;
+      html += `<div style="font-family:'Caveat',cursive;font-size:1.15rem;color:var(--orange-f);margin:.7rem 0 .2rem">${i.g}</div>`;
+    }
+    const q = i.q === null ? '—' : arrondi(i.q * mult) + (i.u ? ' ' + i.u : '');
+    html += `<div class="p-ligne"><span class="p-q">${q}</span><span>${i.n}</span></div>`;
+  }
+  hote.innerHTML = html;
+}
+
+['a','b','c'].forEach(k => rendre(k, 1));
+
+// A et C : multiplicateurs
+document.querySelectorAll('[data-groupe="a"], [data-groupe="c"]').forEach(zone => {
+  const cle = zone.dataset.groupe;
+  zone.addEventListener('click', e => {
+    const b = e.target.closest('button[data-m]');
+    if (!b) return;
+    zone.querySelectorAll('button').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    rendre(cle, parseFloat(b.dataset.m));
+  });
+});
+
+// B : compteur de personnes
+const zoneB = document.querySelector('[data-groupe="b"]');
+let pers = BASE_PERS;
+function majB() {
+  zoneB.querySelector('[data-nb]').textContent = pers;
+  zoneB.querySelector('[data-reset]').hidden = (pers === BASE_PERS);
+  rendre('b', pers / BASE_PERS);
+}
+zoneB.addEventListener('click', e => {
+  const s = e.target.closest('.step');
+  if (s) { pers = Math.max(1, Math.min(60, pers + parseInt(s.dataset.d, 10))); return majB(); }
+  if (e.target.closest('[data-reset]')) { pers = BASE_PERS; majB(); }
+});
+majB();
+</script>
+</body>
+</html>

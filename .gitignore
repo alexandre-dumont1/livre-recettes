@@ -3,3 +3,12 @@ config.js
 node_modules/
 .env
 .env.local
+supabase/.temp/
+
+# Artefacts régénérables (voir scripts/illustrations-proposer.py)
+illustrations/
+demos/apercus/
+
+# Caches Python des scripts et des skills
+__pycache__/
+*.pyc

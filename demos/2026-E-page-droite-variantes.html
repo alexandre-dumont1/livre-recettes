@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Page droite — quatre partis pris</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   Quatre traitements de la page droite, avec du CONTENU RÉEL.
+   Les six images sont de vrais manuscrits de la base, convertis en
+   aperçus. Impossible de juger un mur de photos sur des rectangles
+   gris : c'est ce qui rendait la version précédente injugeable.
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+  --creme:     #f4f0e6;
+  --creme-alt: #ebe6d9;
+  --noir:      #14120e;
+  --gris:      #4a453c;
+  --gris-fin:  #6b6459;
+  --orange:    #d1500f;
+  --orange-f:  #a83d08;
+  --filet:     #cfc7b4;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #ddd7c8; color: var(--noir);
+  font-family: 'Archivo', system-ui, sans-serif; font-size: 16px; line-height: 1.6;
+  padding-bottom: 5rem;
+}
+.entete { background: var(--noir); color: #cfc7b4; padding: 1.6rem 2rem; }
+.entete h1 { font-size: 1.3rem; }
+.entete p { font-size: 0.95rem; color: #a09889; margin-top: 0.4rem; max-width: 72ch; }
+
+.grille { display: flex; flex-wrap: wrap; gap: 2.5rem; padding: 2.5rem 2rem; max-width: 1400px; margin: 0 auto; }
+.cas { width: 480px; }
+.cas-num {
+  font-size: 2.2rem; font-weight: 700; line-height: 1;
+  color: var(--orange-f); margin-bottom: 0.2rem;
+}
+.cas-nom { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.15rem; }
+.cas-axe {
+  font-size: 0.76rem; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--gris-fin); font-weight: 600; margin-bottom: 0.9rem;
+}
+.cas-note { font-size: 0.88rem; color: var(--gris); margin-top: 0.8rem; }
+
+/* La page droite simulée */
+.page {
+  position: relative; width: 480px; height: 620px;
+  background: var(--creme-alt); overflow: hidden;
+}
+.page::after {
+  content: ''; position: absolute; right: 0; top: 0; bottom: 0;
+  width: 7px; background: var(--orange); z-index: 30;
+}
+.etiq {
+  position: absolute; z-index: 25;
+  background: var(--noir); color: var(--creme);
+  font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700;
+  padding: 0.16rem 0.42rem;
+}
+img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top center; }
+
+/* ── 1. Planche contact : alignée, cadrée, sans rotation ── */
+.contact { position: absolute; inset: 0; padding: 1.1rem 1.6rem 1.1rem 1.1rem;
+  display: grid; grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(3, 1fr); gap: 0.7rem; }
+.contact figure { position: relative; background: #fff; border: 5px solid #fff; overflow: hidden;
+  box-shadow: 0 1px 3px rgba(20,18,14,0.14); }
+.contact .etiq { top: 5px; left: 5px; }
+.contact figcaption {
+  position: absolute; left: 0; right: 0; bottom: 0; background: #fff;
+  font-family: 'Caveat', cursive; font-size: 0.95rem; font-weight: 700;
+  padding: 0.1rem 0.4rem; border-top: 1px solid var(--filet);
+}
+
+/* ── 2. Une dominante + bande : hiérarchie calme ── */
+.dominante { position: absolute; inset: 0; padding: 1.2rem 1.7rem 1.2rem 1.2rem;
+  display: grid; grid-template-rows: 1fr auto; gap: 0.8rem; }
+.dominante .grande { position: relative; background: #fff; border: 7px solid #fff; overflow: hidden;
+  box-shadow: 0 2px 6px rgba(20,18,14,0.16); }
+.dominante .grande .etiq { top: 7px; left: 7px; }
+.dominante .grande figcaption {
+  position: absolute; left: 0; right: 0; bottom: 0; background: #fff;
+  font-family: 'Caveat', cursive; font-size: 1.15rem; font-weight: 700;
+  padding: 0.15rem 0.55rem; border-top: 1px solid var(--filet);
+  display: flex; justify-content: space-between; align-items: baseline;
+}
+.dominante .grande figcaption span:last-child {
+  font-family: 'Archivo', sans-serif; font-size: 0.62rem; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--orange-f); font-weight: 700;
+}
+.dominante .bande { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.6rem; height: 105px; }
+.dominante .bande figure { background: #fff; border: 4px solid #fff; overflow: hidden;
+  box-shadow: 0 1px 3px rgba(20,18,14,0.14); }
+.dominante .bande .vide {
+  border: 1.5px dashed var(--filet); background: transparent; box-shadow: none;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--orange-f); font-weight: 700;
+}
+
+/* ── 3. Pêle-mêle posé : libre, incliné, superposé ── */
+.pele { position: absolute; inset: 0; }
+.pele figure {
+  position: absolute; background: #fff; border: 6px solid #fff; overflow: hidden;
+  transform: rotate(var(--r)); transform-origin: center;
+  box-shadow: 0 2px 6px rgba(20,18,14,0.18), 0 12px 26px rgba(20,18,14,0.14);
+}
+.pele .m  { --r: -2.4deg; left:  3%; top:  5%; width: 50%; height: 55%; z-index: 10; }
+.pele .a  { --r:  4.6deg; left: 47%; top:  2%; width: 33%; height: 28%; z-index: 4; }
+.pele .b  { --r: -3.6deg; left: 56%; top: 24%; width: 30%; height: 27%; z-index: 6; }
+.pele .c  { --r:  3.2deg; left:  6%; top: 53%; width: 37%; height: 34%; z-index: 7; }
+.pele .d  { --r: -5.4deg; left: 40%; top: 62%; width: 30%; height: 27%; z-index: 5; }
+.pele .e  { --r:  6.2deg; left: 66%; top: 57%; width: 24%; height: 23%; z-index: 3;
+  border: 1.5px dashed var(--filet); background: rgba(255,255,255,0.5);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--orange-f); font-weight: 700; box-shadow: none; }
+.pele .m .etiq { top: 6px; left: 6px; }
+
+/* ── 4. Mosaïque plein cadre : jointive, sans cadre, à fond perdu ── */
+.mosaique { position: absolute; inset: 0; padding-right: 7px;
+  display: grid; grid-template-columns: repeat(6, 1fr); grid-template-rows: repeat(6, 1fr); gap: 2px; }
+.mosaique figure { position: relative; overflow: hidden; background: var(--creme); }
+.mosaique .m { grid-column: 1 / span 4; grid-row: 1 / span 4; }
+.mosaique .a { grid-column: 5 / span 2; grid-row: 1 / span 2; }
+.mosaique .b { grid-column: 5 / span 2; grid-row: 3 / span 2; }
+.mosaique .c { grid-column: 1 / span 2; grid-row: 5 / span 2; }
+.mosaique .d { grid-column: 3 / span 2; grid-row: 5 / span 2; }
+.mosaique .e { grid-column: 5 / span 2; grid-row: 5 / span 2;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--creme); font-size: 0.62rem; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--orange-f); font-weight: 700; }
+.mosaique .m .etiq { top: 0; left: 0; }
+.mosaique .m figcaption {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  background: var(--noir); color: var(--creme);
+  font-family: 'Caveat', cursive; font-size: 1.05rem; font-weight: 700;
+  padding: 0.1rem 0.5rem;
+}
+</style>
+</head>
+<body>
+
+<div class="entete">
+  <h1>Page droite — quatre partis pris</h1>
+  <p>Les six vignettes sont de <strong>vrais manuscrits de ta base</strong>, convertis en aperçus. Je te faisais juger un mur de photos sur des rectangles gris avec des icônes : c'était injugeable, et c'est probablement ça que tu n'aimais pas plutôt que la composition. Ici tout est rempli. Pointe simplement un numéro.</p>
+</div>
+
+<div class="grille">
+
+  <!-- 1 -->
+  <div class="cas">
+    <div class="cas-num">1</div>
+    <div class="cas-nom">Planche contact</div>
+    <div class="cas-axe">aligné · cadré · aucune rotation</div>
+    <div class="page">
+      <div class="contact">
+        <figure><span class="etiq">manuscrit</span><img src="apercus/doc3.png" alt=""><figcaption>Véronique</figcaption></figure>
+        <figure><img src="apercus/doc1.png" alt=""><figcaption>Noël 1987</figcaption></figure>
+        <figure><img src="apercus/doc2.png" alt=""><figcaption>par Marie</figcaption></figure>
+        <figure><img src="apercus/doc5.png" alt=""><figcaption>par Paul</figcaption></figure>
+        <figure><img src="apercus/doc4.png" alt=""><figcaption>chez Mamie</figcaption></figure>
+        <figure><img src="apercus/doc6.png" alt=""><figcaption>été 1992</figcaption></figure>
+      </div>
+    </div>
+    <p class="cas-note">Calme, sérieux, lisible. Chaque pièce a le même poids. Le risque : ça ressemble à un catalogue d'archives plus qu'à un souvenir de famille.</p>
+  </div>
+
+  <!-- 2 -->
+  <div class="cas">
+    <div class="cas-num">2</div>
+    <div class="cas-nom">Une dominante et une bande</div>
+    <div class="cas-axe">hiérarchie nette · aligné · cadré</div>
+    <div class="page">
+      <div class="dominante">
+        <figure class="grande">
+          <span class="etiq">manuscrit</span>
+          <img src="apercus/doc3.png" alt="">
+          <figcaption><span>de la main de Véronique</span><span>agrandir</span></figcaption>
+        </figure>
+        <div class="bande">
+          <figure><img src="apercus/doc1.png" alt=""></figure>
+          <figure><img src="apercus/doc2.png" alt=""></figure>
+          <figure><img src="apercus/doc5.png" alt=""></figure>
+          <figure class="vide">+ ajouter</figure>
+        </div>
+      </div>
+    </div>
+    <p class="cas-note">Le manuscrit reste la pièce maîtresse, les photos de famille défilent en pellicule dessous. Hiérarchie claire, et la bande se remplit avec le temps.</p>
+  </div>
+
+  <!-- 3 -->
+  <div class="cas">
+    <div class="cas-num">3</div>
+    <div class="cas-nom">Pêle-mêle posé</div>
+    <div class="cas-axe">libre · incliné · superposé</div>
+    <div class="page">
+      <div class="pele">
+        <figure class="m"><span class="etiq">manuscrit</span><img src="apercus/doc3.png" alt=""></figure>
+        <figure class="a"><img src="apercus/doc1.png" alt=""></figure>
+        <figure class="b"><img src="apercus/doc2.png" alt=""></figure>
+        <figure class="c"><img src="apercus/doc5.png" alt=""></figure>
+        <figure class="d"><img src="apercus/doc4.png" alt=""></figure>
+        <figure class="e">+ ajouter</figure>
+      </div>
+    </div>
+    <p class="cas-note">La version que tu viens de voir, mais remplie. Chaleureux et vivant, au prix du désordre : rien n'est aligné et une partie de chaque cliché est masquée.</p>
+  </div>
+
+  <!-- 4 -->
+  <div class="cas">
+    <div class="cas-num">4</div>
+    <div class="cas-nom">Mosaïque plein cadre</div>
+    <div class="cas-axe">jointif · sans cadre · à fond perdu</div>
+    <div class="page">
+      <div class="mosaique">
+        <figure class="m"><span class="etiq">manuscrit</span><img src="apercus/doc3.png" alt=""><figcaption>de la main de Véronique</figcaption></figure>
+        <figure class="a"><img src="apercus/doc1.png" alt=""></figure>
+        <figure class="b"><img src="apercus/doc2.png" alt=""></figure>
+        <figure class="c"><img src="apercus/doc5.png" alt=""></figure>
+        <figure class="d"><img src="apercus/doc4.png" alt=""></figure>
+        <figure class="e">+ ajouter</figure>
+      </div>
+    </div>
+    <p class="cas-note">Graphique et dense, sans marge perdue. Les images touchent les bords de la page. Le plus moderne des quatre, le moins « album de famille ».</p>
+  </div>
+
+</div>
+
+</body>
+</html>

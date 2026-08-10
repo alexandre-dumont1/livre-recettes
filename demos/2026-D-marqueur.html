@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Direction D — Marqueur</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,400..700,0..100,0..1;1,9..144,400..700,0..100,0..1&family=Archivo:wght@400;500;600;700&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   DIRECTION D — MARQUEUR
+   Inspiré des doubles pages de livre de cuisine français
+   contemporain : titre au marqueur, accroche courte, jauges, chapeau
+   centré en serif gras, colonnes par phase, note encadrée, tranche
+   orange.
+   Trois écarts assumés :
+     - la photo pleine page devient un PÊLE-MÊLE cliquable (manuscrit
+       + photos du plat + photos de famille), qui se remplit à mesure
+       que la famille contribue ;
+     - l'accroche quitte le calembour pour le registre du souvenir ;
+     - le corps reste à 16px là où la référence descend vers 9px.
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+  /* Ratios mesurés sur --creme, pas estimés. */
+  --creme:     #f4f0e6;
+  --creme-alt: #ebe6d9;
+  --noir:      #14120e;   /* 16,44:1  AAA */
+  --gris:      #4a453c;   /*  8,36:1  AAA */
+  --gris-fin:  #6b6459;   /*  5,14:1  AA — plancher */
+  --orange:    #d1500f;   /*  3,79:1  filets et aplats UNIQUEMENT, jamais du texte */
+  --orange-f:  #a83d08;   /*  5,53:1  AA — la variante à utiliser dès qu'il y a du texte */
+  --filet:     #cfc7b4;
+  --corps:     16px;      /* plancher assumé : la référence descend à ~9px, on refuse */
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #ddd7c8;
+  font-family: 'Archivo', system-ui, sans-serif;
+  font-size: var(--corps); line-height: 1.6; color: var(--noir);
+  -webkit-font-smoothing: antialiased; padding-bottom: 6rem;
+}
+
+.meta { background: var(--noir); color: #cfc7b4; padding: 1.5rem 2rem; }
+.meta h1 { font-family: 'Permanent Marker', cursive; font-size: 1.9rem; color: #f4f0e6; }
+.meta p { font-size: 0.95rem; color: #a09889; margin-top: 0.4rem; max-width: 66ch; }
+.meta code { background: rgba(255,255,255,0.08); padding: 0.1rem 0.35rem; font-size: 0.85em; }
+.meta .invente { color: #e8a06a; }
+.section-label {
+  max-width: 1280px; margin: 3rem auto 1rem; padding: 0 2rem;
+  font-size: 0.78rem; letter-spacing: 0.18em; text-transform: uppercase;
+  color: #6f6858; font-weight: 600;
+}
+
+/* ── LA DOUBLE PAGE ── */
+.spread {
+  max-width: 1280px; margin: 0 auto;
+  display: grid; grid-template-columns: 1fr 1fr;
+  background: var(--creme);
+  box-shadow: 0 18px 40px rgba(20,18,14,0.18);
+}
+
+/* La tranche : filet orange sur les bords extérieurs. */
+.page-g { position: relative; padding: 3rem 3.2rem 2rem 3.6rem; }
+.page-g::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 7px;
+  background: var(--orange);
+}
+/* Le cahier : quelques filets clairs près de la reliure. */
+.page-g::after {
+  content: ''; position: absolute; left: 14px; top: 0; bottom: 0; width: 10px;
+  background: repeating-linear-gradient(to right, rgba(20,18,14,0.06) 0 1px, transparent 1px 4px);
+}
+
+/* ── En-tête ── */
+.accroche {
+  font-family: 'Fraunces', Georgia, serif; font-weight: 700;
+  font-size: 1rem; text-align: center; margin-bottom: 0.9rem;
+}
+/* ── Titre ────────────────────────────────────────────────────────────────────
+   CHEVAUCHEMENT CORRIGÉ. La version précédente était figée à 4,6rem avec un
+   interlignage de 0,88. Or 18 des 122 recettes dépassent 40 caractères et une
+   monte à 62 : sur trois lignes de Permanent Marker, dont les hampes sont
+   hautes, les lignes se touchaient.
+
+   Trois garde-fous :
+     1. interlignage ramené à 1,0 : on perd un peu de compacité, on gagne la
+        certitude que deux lignes ne se croisent jamais ;
+     2. clamp() : le titre se réduit tout seul quand la colonne se resserre ;
+     3. deux modificateurs de longueur, à poser côté application comme le fait
+        déjà titleSize() dans app.js.
+   ─────────────────────────────────────────────────────────────────────────── */
+.titre {
+  font-family: 'Permanent Marker', cursive;
+  font-size: clamp(2.3rem, 5.2vw, 4.4rem);
+  /* 1,05 et non 0,88 : c'est l'interlignage serré qui faisait mordre les
+     lignes entre elles sur les titres à rallonge, pas la police. */
+  line-height: 1.05;
+  text-align: center; text-wrap: balance;
+  color: var(--noir); margin-bottom: 1.3rem;
+  letter-spacing: -0.005em;
+}
+/* > 25 caractères */
+.titre--moyen { font-size: clamp(2.1rem, 4.2vw, 3.3rem); }
+/* > 40 caractères : le cas des Langoustines à 62 signes */
+/* Plancher à 1,95rem : en dessous, le marqueur devient illisible. Un titre
+   de 58 signes prend simplement plus de lignes, il ne rétrécit pas davantage. */
+.titre--long  { font-size: clamp(1.95rem, 3.4vw, 2.7rem); line-height: 1.12; }
+
+/* Plus aucune rotation sur le titre : basculer des mots d'un serif descriptif
+   de 58 signes donnait du désordre, pas du style. Le geste manuscrit se
+   concentre désormais sur ce qui est court : les numéros de phase, le folio et
+   l'étiquette « note ». */
+.titre span { display: inline; }
+
+/* ── Jauges ── */
+.jauges {
+  display: flex; justify-content: center; align-items: center; gap: 1rem;
+  font-size: 0.78rem; letter-spacing: 0.12em; text-transform: uppercase;
+  font-weight: 600; color: var(--gris); margin-bottom: 1.6rem;
+}
+.jauge strong { color: var(--noir); font-weight: 700; }
+.pastille {
+  border: 1.5px solid var(--noir); border-radius: 999px;
+  padding: 0.28rem 0.8rem; font-weight: 700; color: var(--noir);
+}
+
+/* ── Chapeau centré ── */
+.chapeau {
+  font-family: 'Fraunces', Georgia, serif; font-weight: 600;
+  font-size: 1.08rem; line-height: 1.5; text-align: center;
+  max-width: 46ch; margin: 0 auto 2.6rem;
+}
+
+/* ── Le corps : ingrédients à gauche, préparation en flux ────────────────────
+   Défaut de la version précédente : les phases étaient réparties À LA MAIN dans
+   deux colonnes de grille. L'œil ne savait pas s'il devait descendre ou sauter
+   à droite, et j'avais supprimé les numéros, donc plus aucun repère d'ordre.
+
+   Corrigé par trois moyens qui se renforcent :
+     1. column-count : le navigateur fait couler le texte haut → bas puis
+        colonne suivante, comme un journal. L'ordre est garanti par le moteur.
+     2. chaque phase est NUMÉROTÉE au marqueur : l'ordre reste lisible même si
+        le regard saute.
+     3. un filet vertical marque explicitement la frontière entre colonnes.
+   ─────────────────────────────────────────────────────────────────────────── */
+.corps-livre { display: grid; grid-template-columns: 0.58fr 1.42fr; gap: 2.8rem; }
+.corps-livre > * { min-width: 0; }
+
+.col-t {
+  font-size: 0.76rem; letter-spacing: 0.16em; text-transform: uppercase;
+  font-weight: 700; margin-bottom: 0.9rem;
+  padding-bottom: 0.35rem; border-bottom: 1.5px solid var(--noir);
+}
+
+.ingr-liste { list-style: none; font-size: 0.94rem; line-height: 1.75; color: var(--gris); }
+.ingr-liste li { padding: 0.06rem 0; }
+.ingr-liste .q { color: var(--noir); font-weight: 600; font-variant-numeric: tabular-nums; }
+.ingr-liste .groupe {
+  font-family: 'Caveat', cursive; font-size: 1.15rem; color: var(--orange-f);
+  margin-top: 0.8rem;
+}
+
+/* ── Le flux de préparation ──────────────────────────────────────────────────
+   ARBITRAGE mesuré, contre la référence. Sur une double page de 1280 px, la
+   page gauche offre 541 px de contenu. Une colonne d'ingrédients plus DEUX
+   colonnes de préparation laissent 158 px par colonne, soit 20 caractères par
+   ligne quand la lisibilité en demande 45 à 60.
+
+   La référence y arrive parce qu'elle compose en 9 px. Avec un plancher à 16 px,
+   deux colonnes ne rentrent pas sur une demi-page : c'est de l'arithmétique, pas
+   du goût.
+
+   Vérifié jusqu'où : même sur une double page de 1600 px, deux colonnes ne
+   donnent que 29 caractères par ligne. Il n'existe donc AUCUNE largeur d'écran
+   réaliste où elles fonctionnent sur une demi-page. Une colonne, toujours,
+   à ~350 px et 47 caractères par ligne.
+   ─────────────────────────────────────────────────────────────────────────── */
+.prepa { column-count: 1; }
+/* Une phase ne se coupe jamais entre deux colonnes : pas de titre orphelin. */
+.phase { break-inside: avoid; margin-bottom: 1.7rem; }
+.phase:last-child { margin-bottom: 0; }
+
+/* ── Titre de partie ─────────────────────────────────────────────────────────
+   ÉCHEC de ma version précédente. J'avais mis les trois éléments sur UNE ligne
+   (numéro, nom, pastille) dans une grille à trois pistes. Or dans une colonne
+   de 230 px, « LA CONFITURE DE LAIT » en capitales espacées demande à lui seul
+   180 px : avec le numéro et la pastille, il fallait 280 px. La piste du milieu
+   a donc été étranglée et overflow-wrap a coupé les mots en syllabes
+   (« LA CONF ITUR E DE LAIT »).
+
+   Deux pistes seulement, et un empilement vertical : le numéro à gauche sur
+   toute la hauteur, le nom sur sa propre ligne où il peut respirer, la durée
+   en dessous. Plus aucune concurrence pour la largeur.
+   ─────────────────────────────────────────────────────────────────────────── */
+.phase-tete {
+  display: grid; grid-template-columns: auto 1fr;
+  column-gap: 0.7rem; align-items: start;
+  border-bottom: 1.5px solid var(--noir);
+  padding-bottom: 0.45rem; margin-bottom: 0.7rem;
+}
+/* Le numéro au marqueur : l'ancrage visuel ET le repère d'ordre. */
+.phase-num {
+  grid-column: 1; grid-row: 1 / span 2; align-self: center;
+  font-family: 'Permanent Marker', cursive; font-size: 1.9rem; line-height: 0.9;
+  color: var(--orange-f);
+  transform: rotate(-3deg);
+}
+.phase-nom {
+  grid-column: 2; grid-row: 1;
+  /* Espacement ramené de 0,16em à 0,07em : sur un nom de 20 signes en
+     capitales, 0,16em coûtait à lui seul une trentaine de pixels. */
+  font-size: 0.8rem; letter-spacing: 0.07em; text-transform: uppercase;
+  font-weight: 700; color: var(--noir); line-height: 1.28;
+  /* JAMAIS de break-word ici : c'est ce qui produisait « CONF ITUR E ». Un mot
+     trop long débordera visiblement plutôt que d'être charcuté en silence. */
+  overflow-wrap: normal; hyphens: none;
+}
+.phase-duree {
+  grid-column: 2; grid-row: 2; justify-self: start;
+  margin-top: 0.3rem;
+  font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase;
+  font-weight: 700; color: var(--gris);
+  border: 1.5px solid var(--filet); border-radius: 999px;
+  padding: 0.14rem 0.5rem; white-space: nowrap;
+}
+
+/* Marqueur de liste : tiret cadratin en encre pâle. Le « × » orange se lisait
+   comme une croix d'erreur, un « ne pas faire » — c'est la couleur rouge-orangé
+   qui portait ce sens, pas le glyphe. Le tiret est la convention française des
+   listes et n'a aucune charge sémantique.
+   Retrait suspendu : les lignes qui reviennent s'alignent sous le texte et non
+   sous le tiret, ce qui garde une colonne de gauche nette. */
+.acte {
+  font-size: 0.94rem; line-height: 1.62; color: var(--gris);
+  padding-left: 1.05rem; text-indent: -1.05rem;
+  margin-bottom: 0.5rem;
+}
+.acte:last-child { margin-bottom: 0; }
+.acte::before {
+  content: '—'; color: var(--gris-fin); font-weight: 400;
+  margin-right: 0.4rem;
+}
+
+/* ── Encadré note ── */
+.note {
+  margin-top: 2.4rem; max-width: 240px;
+  border: 1.5px solid var(--noir); padding: 1.5rem 1rem 1rem; position: relative;
+}
+.note-etiq {
+  position: absolute; top: -0.85rem; left: 0.8rem;
+  background: var(--creme); padding: 0 0.5rem;
+  font-family: 'Caveat', cursive; font-size: 1.3rem; font-weight: 700;
+}
+.note p { font-size: 0.9rem; line-height: 1.6; color: var(--gris); }
+
+/* ── Pied de page ── */
+.pied { margin-top: 2.4rem; text-align: center; }
+.pied-num { font-family: 'Caveat', cursive; font-size: 1.6rem; font-weight: 700; }
+.pied-chap {
+  font-size: 0.68rem; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--gris-fin); font-weight: 600;
+}
+
+/* ── Page droite : le PÊLE-MÊLE ──────────────────────────────────────────────
+   Un mur d'images cliquables qui mélange le manuscrit, les photos du plat
+   réussi par les uns et les autres, et les photos de famille.
+
+   L'intérêt du pêle-mêle : il se dégrade bien. Aujourd'hui, avec zéro photo en
+   base, le manuscrit occupe toute la page. À mesure que la famille ajoute, la
+   grille se remplit et la page s'enrichit sans qu'on retouche le design.
+   ─────────────────────────────────────────────────────────────────────────── */
+.page-d { position: relative; background: var(--creme-alt); overflow: hidden; }
+.page-d::after {
+  content: ''; position: absolute; right: 0; top: 0; bottom: 0; width: 7px;
+  background: var(--orange); z-index: 5;
+}
+
+/* ── Le pêle-mêle ────────────────────────────────────────────────────────────
+   Version précédente : une grille avec des rotations de 1,3° et des gouttières.
+   Résultat, une grille légèrement de travers — pas un pêle-mêle. Un pêle-mêle,
+   c'est des clichés POSÉS, qui se recouvrent en partie, avec des inclinaisons
+   franches.
+
+   D'où le positionnement libre en pourcentages : ça se superpose vraiment, et
+   ça reste proportionnel quand la page change de taille.
+
+   Deux règles tenues :
+     - le manuscrit est TOUJOURS au-dessus de la pile. Une photo ne recouvre
+       jamais l'écriture ;
+     - au survol et au focus, la vignette remonte au premier plan et se
+       redresse, donc la partie masquée redevient accessible.
+   ─────────────────────────────────────────────────────────────────────────── */
+.pele { position: absolute; inset: 0; }
+
+/* Chaque vignette est un vrai bouton : cible tactile large, focus visible. */
+.tuile {
+  position: absolute; display: block; padding: 0; overflow: hidden; cursor: pointer;
+  background: #fff; border: 6px solid #fff;
+  box-shadow: 0 2px 6px rgba(20,18,14,0.18), 0 14px 30px rgba(20,18,14,0.14);
+  transform: rotate(var(--r, 0deg));
+  transform-origin: center;
+  transition: transform .2s ease-out, box-shadow .2s ease-out;
+}
+.tuile:hover, .tuile:focus-visible {
+  transform: rotate(0deg) scale(1.04);
+  box-shadow: 0 6px 14px rgba(20,18,14,0.24), 0 22px 44px rgba(20,18,14,0.2);
+  z-index: 20;
+}
+.tuile:focus-visible { outline: 3px solid var(--orange-f); outline-offset: 3px; }
+.tuile img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
+
+/* Une photo qui ne vient pas de la famille doit le DIRE. Sans ce marqueur, le
+   site prétendrait qu'une photo de banque d'images est le plat de quelqu'un —
+   exactement le contraire de ce que ce livre est censé transmettre. */
+.tag-illus {
+  position: absolute; top: 0; right: 0; z-index: 4;
+  background: rgba(20,18,14,0.72); color: #f4f0e6;
+  font-size: 0.56rem; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 700;
+  padding: 0.14rem 0.36rem;
+}
+
+/* Les positions. Un pêle-mêle se règle à l'œil, pas au calcul : ces valeurs
+   sont choisies pour que les coins se mordent de 15 à 30 px. */
+.tuile--manuscrit { --r: -2.4deg; left:  3%; top:  5%; width: 50%; height: 55%; z-index: 10; }
+.tuile--p1        { --r:  4.6deg; left: 47%; top:  2%; width: 33%; height: 28%; z-index: 4; }
+.tuile--p2        { --r: -3.6deg; left: 56%; top: 24%; width: 30%; height: 27%; z-index: 6; }
+.tuile--p3        { --r:  3.2deg; left:  6%; top: 53%; width: 37%; height: 34%; z-index: 7; }
+.tuile--p4        { --r: -5.4deg; left: 40%; top: 62%; width: 30%; height: 27%; z-index: 5; }
+.tuile--vide      { --r:  6.2deg; left: 66%; top: 57%; width: 24%; height: 23%; z-index: 3; }
+
+/* ── Le manuscrit : la pièce dominante ───────────────────────────────────────
+   CHEVAUCHEMENT CORRIGÉ, et c'était le plus grave. La légende et l'étiquette
+   étaient en SURIMPRESSION du document : un dégradé sombre mangeait le bas de
+   la page manuscrite, un badge noir couvrait le coin haut gauche. Sur une photo
+   de plat c'est un procédé normal ; sur l'écriture de quelqu'un, c'est de
+   l'information qui masque l'information, et c'est précisément ce qu'on est
+   censé protéger.
+
+   Solution : deux bandeaux OPAQUES dont la place est réservée dans le cadre par
+   du padding. Plus rien ne recouvre le document, à aucun moment.
+   ─────────────────────────────────────────────────────────────────────────── */
+.tuile--manuscrit {
+  border-color: #fffdf8;
+  padding-top: 1.7rem; padding-bottom: 2rem;
+}
+.tuile--manuscrit iframe { width: 100%; height: 100%; border: 0; display: block; pointer-events: none; }
+
+.bandeau-haut, .bandeau-bas {
+  position: absolute; left: 0; right: 0; z-index: 2;
+  background: #fffdf8;
+  display: flex; align-items: center; gap: 0.6rem;
+  padding: 0 0.7rem;
+}
+.bandeau-haut { top: 0; height: 1.8rem; border-bottom: 1px solid var(--filet); }
+.bandeau-bas  { bottom: 0; height: 2.2rem; border-top: 1px solid var(--filet); justify-content: space-between; }
+
+.etiq-manuscrit {
+  background: var(--noir); color: var(--creme);
+  font-size: 0.66rem; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 700;
+  padding: 0.18rem 0.5rem; flex-shrink: 0;
+}
+.bandeau-haut .tech {
+  margin-left: auto; font-size: 0.66rem; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--gris-fin); font-weight: 600;
+}
+.bandeau-bas .main {
+  font-family: 'Caveat', cursive; font-size: 1.35rem; font-weight: 700;
+  color: var(--noir); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.bandeau-bas .lire {
+  font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--orange-f); font-weight: 700; flex-shrink: 0;
+}
+
+/* Emplacements de photo : en attendant les vraies, un aplat honnête et légendé.
+   Pas de fausse photo d'illustration, on ne triche pas sur le contenu. */
+.faux-cliche {
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(135deg, rgba(20,18,14,0.05) 0 12px, transparent 12px 24px),
+    var(--creme-alt);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 0.3rem; text-align: center; padding: 0.6rem;
+}
+.faux-cliche svg { opacity: 0.3; }
+.faux-cliche span {
+  font-size: 0.64rem; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--gris-fin); font-weight: 600; line-height: 1.35;
+}
+
+/* La légende manuscrite, comme au dos d'une photo de famille. */
+.tuile-cap {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 3;
+  background: linear-gradient(to top, rgba(20,18,14,0.9), rgba(20,18,14,0));
+  padding: 1.5rem 0.7rem 0.5rem;
+  font-family: 'Caveat', cursive; font-size: 1.15rem; font-weight: 700;
+  color: #f4f0e6;                                   /* 14,44:1 sur le voile */
+}
+.tuile-cap .tech {
+  font-family: 'Archivo', sans-serif; font-size: 0.68rem; letter-spacing: 0.14em;
+  text-transform: uppercase; color: #bdb5a5; font-weight: 600; text-align: right;
+}
+
+/* Invitation à contribuer : la dernière case appelle une photo. */
+.tuile--vide { border-style: dashed; border-color: var(--filet); background: transparent; box-shadow: none; }
+.tuile--vide:hover { background: rgba(255,255,255,0.4); }
+.tuile--vide .faux-cliche { background: transparent; }
+.tuile--vide span { color: var(--orange-f); }
+
+/* État réel d'aujourd'hui : aucune photo en base. Là, et seulement là, le
+   manuscrit a le droit de s'étaler — il est seul. */
+.pele--seul .tuile--manuscrit { --r: -1.6deg; left: 9%; top: 4%; width: 72%; height: 74%; }
+.appel {
+  position: absolute; left: 7%; right: 7%; bottom: 4%;
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  background: var(--creme-alt);
+  border: 1.5px dashed var(--filet); padding: 0.8rem 1rem;
+}
+.appel p { font-size: 0.86rem; color: var(--gris); }
+.appel button {
+  min-height: 44px; padding: 0 1rem; white-space: nowrap;
+  font-family: 'Archivo', sans-serif; font-size: 0.74rem; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  border: 1.5px solid var(--noir); background: var(--noir); color: var(--creme); cursor: pointer;
+}
+
+/* ── TÉLÉPHONE ── */
+.tel-rangee { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: flex; gap: 2.5rem; flex-wrap: wrap; }
+.tel { width: 375px; height: 720px; overflow-y: auto; background: var(--creme); border: 10px solid var(--noir); border-radius: 28px; }
+.tel-titre { font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase; color: #6f6858; margin-bottom: 0.6rem; font-weight: 600; }
+.tel-in { padding: 1.6rem 1.3rem 3rem; }
+.tel-in .titre { font-size: 2.5rem; }
+.tel-in .corps-livre { grid-template-columns: 1fr; gap: 1.8rem; }
+.tel-in .chapeau { margin-bottom: 1.8rem; }
+.tel-in .note { max-width: none; }
+.tel-manuscrit { position: relative; height: 320px; margin-bottom: 1.8rem; }
+.tel-manuscrit iframe { width: 100%; height: 100%; border: 0; }
+
+.cuisine { padding: 1.6rem 1.3rem; }
+.cuisine-h {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--gris-fin); font-weight: 600;
+  border-bottom: 1.5px solid var(--noir); padding-bottom: 0.7rem; margin-bottom: 1.4rem;
+}
+.cuisine-phase { font-size: 0.74rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--orange-f); font-weight: 700; }
+.cuisine-t { font-family: 'Fraunces', Georgia, serif; font-variation-settings: 'opsz' 72, 'SOFT' 40, 'WONK' 1; font-weight: 700; font-size: 2rem; line-height: 1.08; letter-spacing: -0.015em; margin: 0.5rem 0 1.1rem; }
+.cuisine-d { font-family: 'Fraunces', Georgia, serif; font-size: 1.2rem; line-height: 1.58; }
+.coche { display: flex; gap: 0.8rem; align-items: center; padding: 0.75rem 0; font-size: 1.05rem; min-height: 44px; border-bottom: 1px solid var(--filet); }
+.coche input { width: 24px; height: 24px; accent-color: var(--orange-f); flex-shrink: 0; }
+.coche.faite { color: var(--gris-fin); text-decoration: line-through; }
+.cuisine-bas { display: flex; gap: 0.7rem; margin-top: 2rem; }
+.c-btn {
+  flex: 1; min-height: 52px; font-family: 'Archivo', sans-serif; font-weight: 700;
+  font-size: 0.82rem; letter-spacing: 0.12em; text-transform: uppercase;
+  border: 1.5px solid var(--noir); background: none; color: var(--noir); cursor: pointer;
+}
+.c-btn--prim { background: var(--noir); color: var(--creme); }
+.c-btn:focus-visible { outline: 2px solid var(--orange-f); outline-offset: 2px; }
+.veille { font-size: 0.78rem; color: var(--gris-fin); text-align: center; margin-top: 1rem; }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+@media (max-width: 1180px) {
+  .corps-livre { grid-template-columns: 0.5fr 1.5fr; gap: 2.2rem; }
+}
+
+@media (max-width: 980px) {
+  /* On réorganise en une colonne, on ne réduit jamais à l'échelle. */
+  .spread { grid-template-columns: 1fr; }
+  .page-g { padding: 2rem 1.3rem 1.6rem 1.8rem; }
+  .page-g::after { display: none; }
+  .corps-livre { grid-template-columns: 1fr; gap: 1.8rem; }
+  .titre { font-size: 2.6rem; }
+  .page-d { height: 70vh; }
+  .note { max-width: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="meta">
+  <h1>Direction D — Marqueur</h1>
+  <p>Inspiré de tes deux références, pas recopié. On garde la grammaire qui fait leur force : titre au marqueur avec ligne de base qui danse, accroche courte au-dessus, jauges avec pastille, chapeau centré en serif gras, colonnes regroupées par phase à puces <code>×</code>, encadré note à étiquette manuscrite, pied de page manuscrit, tranche orange.</p>
+  <p style="margin-top:0.6rem">Trois écarts assumés. La photo pleine page devient un <strong>pêle-mêle cliquable</strong> qui mêle le manuscrit, les photos du plat réussi et les photos de famille. L'accroche quitte le calembour pour le <strong>registre du souvenir</strong>, qui est ton sujet. Et le corps de texte reste à 16&nbsp;px là où la référence descend autour de 9&nbsp;px, sinon on annule l'objectif de lisibilité.</p>
+  <p style="margin-top:0.6rem"><span class="invente">Inventé faute de données</span> : les accroches, la jauge « Réconfort », et les vignettes photo qui sont des quatre <span class="invente">photos libres de droits de Wikimedia Commons</span> (CC0, CC BY, CC BY-SA — crédits dans apercus/CREDITS.json), en attendant les vraies. Chacune porte un marqueur « illustration » : le site ne doit jamais faire passer une photo de banque pour le plat de la famille.</p>
+</div>
+
+<div class="section-label">Vue bureau</div>
+
+<div class="spread">
+  <div class="page-g">
+    <p class="accroche">On la réclamait à chaque Noël</p>
+
+    <h2 class="titre"><span>BANOFFEE</span> <span>PIE</span></h2>
+
+    <div class="jauges">
+      <span class="jauge"><strong>1/5</strong> complexité</span>
+      <span class="pastille">8 pers.</span>
+      <span class="jauge">réconfort <strong>5/5</strong></span>
+    </div>
+
+    <p class="chapeau">Une tarte anglaise sur base de digestive biscuits, garnie d'une confiture de lait faite maison à la cocotte-minute, de bananes en grosses rondelles et d'une chantilly montée bien ferme.</p>
+
+    <div class="corps-livre">
+      <div>
+        <h3 class="col-t">Ingrédients</h3>
+        <ul class="ingr-liste">
+          <li class="groupe">Base</li>
+          <li><span class="q">150 g</span> de digestive biscuits</li>
+          <li><span class="q">75 g</span> de beurre demi-sel</li>
+          <li class="groupe">Caramel</li>
+          <li><span class="q">397 g</span> de lait concentré sucré</li>
+          <li class="groupe">Garniture</li>
+          <li><span class="q">4</span> bananes</li>
+          <li class="groupe">Chantilly</li>
+          <li><span class="q">250 ml</span> de crème fleurette</li>
+          <li><span class="q">1 c. à s.</span> de sucre glace</li>
+          <li class="groupe">Service</li>
+          <li>Cacao en poudre</li>
+        </ul>
+      </div>
+
+      <div class="prepa">
+        <div class="phase">
+          <div class="phase-tete">
+            <span class="phase-num">01</span>
+            <span class="phase-nom">La confiture de lait</span>
+            <span class="phase-duree">50 min</span>
+          </div>
+          <p class="acte">Recouvrir la boîte fermée de lait concentré aux trois quarts d'eau, dans une cocotte-minute.</p>
+          <p class="acte">Cuire 45 minutes après le premier sifflement, puis laisser refroidir complètement avant d'ouvrir.</p>
+        </div>
+
+        <div class="phase">
+          <div class="phase-tete">
+            <span class="phase-num">02</span>
+            <span class="phase-nom">La base biscuitée</span>
+            <span class="phase-duree">35 min</span>
+          </div>
+          <p class="acte">Écraser les biscuits en chapelure et mélanger au beurre fondu.</p>
+          <p class="acte">Presser dans un moule à charnière de 22 cm chemisé, puis réserver 30 minutes au frais.</p>
+        </div>
+
+        <div class="phase">
+          <div class="phase-tete">
+            <span class="phase-num">03</span>
+            <span class="phase-nom">La chantilly</span>
+            <span class="phase-duree">5 min</span>
+          </div>
+          <p class="acte">Fouetter la crème fleurette bien froide avec le sucre glace jusqu'à tenue ferme.</p>
+        </div>
+
+        <div class="phase">
+          <div class="phase-tete">
+            <span class="phase-num">04</span>
+            <span class="phase-nom">L'assemblage</span>
+            <span class="phase-duree">1 h 10</span>
+          </div>
+          <p class="acte">Disposer les bananes en rondelles sur la base biscuitée.</p>
+          <p class="acte">Étaler la confiture de lait, puis recouvrir de chantilly.</p>
+          <p class="acte">Réserver au frais une heure au minimum.</p>
+          <p class="acte">Démouler délicatement et saupoudrer de cacao amer juste avant de servir.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="note">
+      <span class="note-etiq">note</span>
+      <p>La confiture de lait se fait à la cocotte-minute en 45 min. Réserver au frais au minimum 1 h avant de servir.</p>
+    </div>
+
+    <div class="pied">
+      <div class="pied-num">23</div>
+      <div class="pied-chap">Desserts &amp; pâtisseries</div>
+    </div>
+  </div>
+
+  <div class="page-d">
+    <div class="pele">
+      <button class="tuile tuile--manuscrit" aria-label="Ouvrir le manuscrit original en plein écran">
+        <span class="bandeau-haut">
+          <span class="etiq-manuscrit">manuscrit</span>
+          <span class="tech">Feuillet A4 · 2 recettes portées</span>
+        </span>
+        <iframe src="https://bxxuorvdntaggxmwqicm.supabase.co/storage/v1/object/public/recipes-pdfs/Banofee_pie_copie.pdf#toolbar=0&navpanes=0&view=Fit" title="" aria-hidden="true" tabindex="-1"></iframe>
+        <span class="bandeau-bas">
+          <span class="main">de la main de Véronique &amp; Francis</span>
+          <span class="lire">agrandir</span>
+        </span>
+      </button>
+
+      <button class="tuile tuile--p1" aria-label="Photo de famille : Noël 1987 chez Mamie, ouvrir en plein écran">
+        <img src="apercus/banoffee2.jpg" alt="">
+        <span class="tag-illus">illustration</span>
+        <span class="tuile-cap">Banoffee pie</span>
+      </button>
+
+      <button class="tuile tuile--p2" aria-label="Photo du plat réussi par Marie en mars 2026, ouvrir en plein écran">
+        <img src="apercus/banoffee1.jpg" alt="">
+        <span class="tag-illus">illustration</span>
+        <span class="tuile-cap">la part servie</span>
+      </button>
+
+      <button class="tuile tuile--p3" aria-label="Photo de famille : la cuisine de Mamie, ouvrir en plein écran">
+        <img src="apercus/banoffee3.jpg" alt="">
+        <span class="tag-illus">illustration</span>
+        <span class="tuile-cap">les couches</span>
+      </button>
+
+      <button class="tuile tuile--p4" aria-label="Photo du plat réussi par Paul, ouvrir en plein écran">
+        <img src="apercus/banoffee4.jpg" alt="">
+        <span class="tag-illus">illustration</span>
+        <span class="tuile-cap">au cacao amer</span>
+      </button>
+
+      <button class="tuile tuile--vide" aria-label="Ajouter une photo à cette recette">
+        <span class="faux-cliche">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#a83d08" stroke-width="1.6"><path d="M12 5v14M5 12h14"/></svg>
+          <span>ajouter</span>
+        </span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="section-label">Vue bureau — l'état réel d'aujourd'hui, zéro photo en base</div>
+
+<div class="spread">
+  <div class="page-g" style="padding-top:2.4rem">
+    <p class="accroche">Celle que Véronique n'a jamais ratée</p>
+    <h2 class="titre"><span>BANOFFEE</span> <span>PIE</span></h2>
+    <div class="jauges">
+      <span class="jauge"><strong>1/5</strong> complexité</span>
+      <span class="pastille">8 pers.</span>
+      <span class="jauge">réconfort <strong>5/5</strong></span>
+    </div>
+    <p class="chapeau">Une tarte anglaise sur base de digestive biscuits, garnie d'une confiture de lait faite maison à la cocotte-minute, de bananes en grosses rondelles et d'une chantilly montée bien ferme.</p>
+    <div class="corps-livre">
+      <div>
+        <h3 class="col-t">Ingrédients</h3>
+        <ul class="ingr-liste">
+          <li class="groupe">Base</li>
+          <li><span class="q">150 g</span> de digestive biscuits</li>
+          <li><span class="q">75 g</span> de beurre demi-sel</li>
+          <li class="groupe">Caramel</li>
+          <li><span class="q">397 g</span> de lait concentré sucré</li>
+          <li class="groupe">Garniture</li>
+          <li><span class="q">4</span> bananes</li>
+        </ul>
+      </div>
+      <div class="prepa">
+        <div class="phase">
+          <div class="phase-tete">
+            <span class="phase-num">01</span>
+            <span class="phase-nom">La confiture de lait</span>
+            <span class="phase-duree">50 min</span>
+          </div>
+          <p class="acte">Recouvrir la boîte fermée aux trois quarts d'eau, en cocotte-minute.</p>
+          <p class="acte">Cuire 45 min après le premier sifflement, laisser refroidir avant d'ouvrir.</p>
+        </div>
+        <div class="phase">
+          <div class="phase-tete">
+            <span class="phase-num">02</span>
+            <span class="phase-nom">L'assemblage</span>
+            <span class="phase-duree">1 h</span>
+          </div>
+          <p class="acte">Bananes en rondelles sur la base, confiture de lait, puis chantilly.</p>
+          <p class="acte">Au frais une heure minimum, cacao amer au dernier moment.</p>
+        </div>
+      </div>
+    </div>
+    <div class="pied">
+      <div class="pied-num">23</div>
+      <div class="pied-chap">Desserts &amp; pâtisseries</div>
+    </div>
+  </div>
+
+  <div class="page-d">
+    <div class="pele pele--seul">
+      <button class="tuile tuile--manuscrit" aria-label="Ouvrir le manuscrit original en plein écran">
+        <span class="bandeau-haut">
+          <span class="etiq-manuscrit">manuscrit</span>
+          <span class="tech">Feuillet A4 · 2 recettes portées</span>
+        </span>
+        <iframe src="https://bxxuorvdntaggxmwqicm.supabase.co/storage/v1/object/public/recipes-pdfs/Banofee_pie_copie.pdf#toolbar=0&navpanes=0&view=Fit" title="" aria-hidden="true" tabindex="-1"></iframe>
+        <span class="bandeau-bas">
+          <span class="main">de la main de Véronique &amp; Francis</span>
+          <span class="lire">agrandir</span>
+        </span>
+      </button>
+      <div class="appel">
+        <p>Aucune photo pour cette recette. La première viendra de quelqu'un de la famille.</p>
+        <button>Ajouter une photo</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section-label">Cas de charge — le pire contenu réel de ta base</div>
+
+<div class="spread">
+  <div class="page-g">
+    <p class="accroche">Celle qu'on ne sort que pour les grandes occasions</p>
+
+    <h2 class="titre titre--long"><span>Langoustines</span> <span>Juste</span> <span>Saisies,</span> <span>Mitonnée</span> <span>de</span> <span>Légumes</span> <span>aux</span> <span>Groseilles</span></h2>
+
+    <div class="jauges">
+      <span class="jauge"><strong>4/5</strong> complexité</span>
+      <span class="pastille">4 pers.</span>
+      <span class="jauge">occasion <strong>5/5</strong></span>
+    </div>
+
+    <p class="chapeau">Le titre le plus long de la base, 62 caractères. Avec l'ancien réglage (4,6 rem, interlignage 0,88) les lignes de marqueur se chevauchaient. Le modificateur titre--long et l'interlignage à 1,06 l'en empêchent.</p>
+
+    <div class="corps-livre">
+      <div>
+        <h3 class="col-t">Ingrédients</h3>
+        <ul class="ingr-liste">
+          <li class="groupe">Mitonnée de légumes</li>
+          <li><span class="q">12</span> langoustines vivantes</li>
+          <li><span class="q">200 g</span> de groseilles fraîches</li>
+          <li class="groupe">Finition et dressage</li>
+          <li><span class="q">1 c. à s.</span> de vinaigre de groseille</li>
+        </ul>
+      </div>
+
+      <div class="prepa">
+        <div class="phase">
+          <div class="phase-tete">
+            <span class="phase-num">01</span>
+            <span class="phase-nom">Jour du repas — chemiser et cuire</span>
+            <span class="phase-duree">1 h 15</span>
+          </div>
+          <p class="acte">Nom de phase le plus long de la base, 33 caractères. En flex il écrasait la pastille de durée ; en grille à trois pistes il retourne à la ligne et la pastille garde sa place.</p>
+        </div>
+        <div class="phase">
+          <div class="phase-tete">
+            <span class="phase-num">02</span>
+            <span class="phase-nom">Préparer et mariner (1ère phase)</span>
+            <span class="phase-duree">30 min</span>
+          </div>
+          <p class="acte">Une ligne assez longue pour revenir à la ligne et vérifier que le retrait suspendu aligne bien la suite sous le texte, jamais sous la puce.</p>
+        </div>
+        <div class="phase">
+          <div class="phase-tete">
+            <span class="phase-num">03</span>
+            <span class="phase-nom">Cuire langoustines et dresser</span>
+            <span class="phase-duree">12 min</span>
+          </div>
+          <p class="acte">Dernière phase, pour contrôler qu'aucune ne se coupe entre les deux colonnes.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="pied">
+      <div class="pied-num">88</div>
+      <div class="pied-chap">Poissons</div>
+    </div>
+  </div>
+
+  <div class="page-d">
+    <div class="pele pele--seul">
+      <button class="tuile tuile--manuscrit" aria-label="Ouvrir le manuscrit original en plein écran">
+        <span class="bandeau-haut">
+          <span class="etiq-manuscrit">manuscrit</span>
+          <span class="tech">Feuillet A4 · bandeaux opaques</span>
+        </span>
+        <iframe src="https://bxxuorvdntaggxmwqicm.supabase.co/storage/v1/object/public/recipes-pdfs/Banofee_pie_copie.pdf#toolbar=0&navpanes=0&view=Fit" title="" aria-hidden="true" tabindex="-1"></iframe>
+        <span class="bandeau-bas">
+          <span class="main">plus rien ne recouvre l'écriture</span>
+          <span class="lire">agrandir</span>
+        </span>
+      </button>
+      <div class="appel">
+        <p>Les bandeaux ont leur place réservée dans le cadre : le document n'est plus masqué.</p>
+        <button>Ajouter une photo</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section-label">Vue téléphone — lecture, puis mode cuisine</div>
+
+<div class="tel-rangee">
+  <div>
+    <div class="tel-titre">Lecture · 375 px</div>
+    <div class="tel">
+      <div class="tel-in">
+        <p class="accroche">On la réclamait à chaque Noël</p>
+        <h2 class="titre"><span>BANOFFEE</span> <span>PIE</span></h2>
+        <div class="jauges">
+          <span class="jauge"><strong>1/5</strong> compl.</span>
+          <span class="pastille">8 pers.</span>
+        </div>
+        <p class="chapeau">Base de digestive biscuits, confiture de lait maison, bananes et chantilly.</p>
+
+        <div class="tel-manuscrit">
+          <iframe src="https://bxxuorvdntaggxmwqicm.supabase.co/storage/v1/object/public/recipes-pdfs/Banofee_pie_copie.pdf#toolbar=0&navpanes=0&view=Fit" title="Manuscrit original"></iframe>
+        </div>
+
+        <div class="corps-livre">
+          <div>
+            <h3 class="col-t">Ingrédients</h3>
+            <ul class="ingr-liste">
+              <li class="groupe">Base</li>
+              <li><span class="q">150 g</span> de digestive biscuits</li>
+              <li><span class="q">75 g</span> de beurre demi-sel</li>
+              <li class="groupe">Caramel</li>
+              <li><span class="q">397 g</span> de lait concentré sucré</li>
+            </ul>
+          </div>
+          <div class="prepa">
+            <div class="phase">
+              <div class="phase-tete">
+                <span class="phase-num">01</span>
+                <span class="phase-nom">La confiture de lait</span>
+                <span class="phase-duree">50 min</span>
+              </div>
+              <p class="acte">Recouvrir la boîte aux trois quarts d'eau et cuire 45 min après le premier sifflement.</p>
+              <p class="acte">Laisser refroidir complètement avant d'ouvrir.</p>
+            </div>
+            <div class="phase">
+              <div class="phase-tete">
+                <span class="phase-num">02</span>
+                <span class="phase-nom">La base biscuitée</span>
+                <span class="phase-duree">35 min</span>
+              </div>
+              <p class="acte">Biscuits en chapelure, beurre fondu, presser dans le moule, 30 min au frais.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="note">
+          <span class="note-etiq">note</span>
+          <p>Réserver au frais au minimum 1 h avant de servir.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="tel-titre">Mode cuisine</div>
+    <div class="tel">
+      <div class="cuisine">
+        <div class="cuisine-h"><span>Banoffee Pie</span><span>2 / 6</span></div>
+        <div class="cuisine-phase">La base biscuitée · 35 min</div>
+        <h2 class="cuisine-t">Base biscuitée</h2>
+        <p class="cuisine-d">Écraser les biscuits en chapelure avec le beurre fondu. Presser dans un moule à charnière de 22 cm chemisé. Réserver 30 min au frais.</p>
+        <div style="margin-top:2rem">
+          <h3 class="col-t">Pour cette étape</h3>
+          <label class="coche faite"><input type="checkbox" checked> 150 g digestive biscuits</label>
+          <label class="coche"><input type="checkbox"> 75 g beurre demi-sel fondu</label>
+        </div>
+        <div class="cuisine-bas">
+          <button class="c-btn">Précédent</button>
+          <button class="c-btn c-btn--prim">Suivant</button>
+        </div>
+        <p class="veille">L'écran reste allumé pendant la recette</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
