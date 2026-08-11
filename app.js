@@ -979,8 +979,10 @@ function construireFeuillets() {
     livre.appendChild(el);
     feuillets.push(el);
   };
-  ajoute('article', 'page-left', 'Page de garde');
-  ajoute('aside', 'page-right', 'Sommaire du livre');
+  // Ces deux-là portent un nom : sur téléphone la garde se réduit à un bandeau de
+  // titre pour que le menu soit visible à l'ouverture (voir styles.css).
+  ajoute('article', 'page-left page--garde', 'Page de garde');
+  ajoute('aside', 'page-right page--menu', 'Sommaire du livre');
   filteredRecipes.forEach(r => {
     ajoute('article', 'page-left', `Recette : ${r.title}`);
     ajoute('aside', 'page-right', 'Manuscrit et détails de la recette');
@@ -1138,6 +1140,14 @@ function updateControls() {
   const atCover = currentIndex === -1;
   document.getElementById('prevBtn').disabled = atCover;
   document.getElementById('nextBtn').disabled = currentIndex >= filteredRecipes.length - 1;
+
+  // Le nom de la recette d'à côté. Sur téléphone les flèches sont devenues une
+  // barre en fin de recette : « Suivante » seul ne dit pas où l'on va, alors que
+  // le titre donne une raison de tourner la page. Masqué sur grand écran, où les
+  // flèches restent deux pastilles sur les bords.
+  const nomVoisin = i => (i === -1 ? 'Le menu du livre' : (filteredRecipes[i]?.title || ''));
+  document.getElementById('prevTitre').textContent = atCover ? '' : nomVoisin(currentIndex - 1);
+  document.getElementById('nextTitre').textContent = nomVoisin(currentIndex + 1);
   document.getElementById('pageCounter').textContent = atCover
     ? `i\u202f/\u202fii`
     : `${currentIndex + 1}\u202f/\u202f${filteredRecipes.length}`;

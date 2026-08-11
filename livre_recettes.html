@@ -36,8 +36,20 @@
   </div>
 </main>
 
-<button class="nav-arrow nav-prev" id="prevBtn" onclick="changePage(-1)" aria-label="Recette précédente" disabled>‹</button>
-<button class="nav-arrow nav-next" id="nextBtn" onclick="changePage(1)" aria-label="Recette suivante">›</button>
+<!-- Les deux flèches sont enveloppées pour former une vraie barre en bas de la
+     recette sur téléphone, où elles flottaient par-dessus le texte et en mangeaient
+     une partie à chaque page. Sur grand écran l'enveloppe s'effface
+     (display: contents) et les flèches reprennent leur place sur les côtés. -->
+<div class="nav-duo">
+  <button class="nav-arrow nav-prev" id="prevBtn" onclick="changePage(-1)" aria-label="Recette précédente" disabled>
+    <span class="nav-fleche" aria-hidden="true">‹</span>
+    <span class="nav-texte"><span class="nav-sens">Précédente</span><span class="nav-titre" id="prevTitre"></span></span>
+  </button>
+  <button class="nav-arrow nav-next" id="nextBtn" onclick="changePage(1)" aria-label="Recette suivante">
+    <span class="nav-texte"><span class="nav-sens">Suivante</span><span class="nav-titre" id="nextTitre"></span></span>
+    <span class="nav-fleche" aria-hidden="true">›</span>
+  </button>
+</div>
 
 <div class="toc-overlay" id="tocOverlay" role="dialog" aria-modal="true" aria-label="Table des matières" onclick="closeTOCOutside(event)">
   <div class="toc-panel">
