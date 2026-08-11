@@ -734,6 +734,14 @@ body {
 }
 .no-pdf-title { font-family: var(--primitive-font-marqueur); font-size: 2.4rem; line-height: 1.08; }
 
+/* Le filet pointillé partage sa règle avec celui de la provenance, qui vit dans une
+   rangée : là-bas `flex: 1` lui fait occuper la largeur restante. Ici le parent est
+   une COLONNE, donc le même `flex: 1` lui faisait occuper toute la hauteur — un
+   grand pavé de rayures orange verticales au milieu de la page. Jamais vu jusqu'ici
+   parce que les 122 recettes d'origine ont toutes un feuillet ; les six granolas
+   importés n'en ont pas, et le défaut a sauté aux yeux. */
+.no-pdf-souleiado { flex: 0 0 auto; width: 8rem; height: 3px; }
+
 /* Seul .photo-inner survit de l'ancien balisage : il porte le rendu du PDF par
    pdf.js dans la vignette du manuscrit. Tout le reste (photos-zone, photo-slot,
    manuscript-zone) appartenait à la fonctionnalité photo qui lisait des colonnes
