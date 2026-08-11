@@ -1494,6 +1494,40 @@ body {
 .serving-reset[hidden] { display: none; }
 
 
+/* ══ REPRENDRE UN DÉPÔT LAISSÉ EN ROUTE ══════════════════════════════════
+   Une barre en bas, pas une fenêtre modale : quelqu'un qui vient simplement lire
+   une recette ne doit pas avoir à congédier un dialogue avant d'ouvrir son livre.
+   Elle propose, elle ne réclame pas. */
+
+.reprise {
+  position: fixed; z-index: 280;
+  left: var(--spacing-bloc); right: var(--spacing-bloc);
+  bottom: calc(var(--spacing-bloc) + env(safe-area-inset-bottom));
+  margin-inline: auto; max-width: 34rem;
+  display: flex; align-items: center; gap: var(--spacing-champ); flex-wrap: wrap;
+  padding: var(--spacing-champ) var(--spacing-bloc);
+  background: var(--color-page); color: var(--color-ink);
+  border: var(--primitive-border-trait) solid var(--color-ink);
+  box-shadow: var(--primitive-shadow-cliche);
+}
+.reprise-t { flex: 1 1 12rem; min-width: 0; font-size: var(--primitive-font-size-small); }
+.reprise button {
+  flex: 0 0 auto; cursor: pointer; font-family: inherit;
+  font-size: var(--primitive-font-size-label-sm); font-weight: var(--primitive-weight-bold);
+  letter-spacing: var(--primitive-tracking-label); text-transform: uppercase;
+  min-height: var(--primitive-size-touch); padding: 0 var(--spacing-champ);
+  border: var(--primitive-border-trait) solid var(--color-ink);
+}
+.reprise-oui { background: var(--color-ink); color: var(--color-ink-inverse); }
+.reprise-non { background: none; color: var(--color-ink-muted); border-color: var(--color-rule); }
+
+@media (max-width: 900px) {
+  /* La barre des flèches occupe déjà le bas de la recette : on laisse de la place
+     pour ne pas empiler deux barres l'une sur l'autre. */
+  .reprise { left: var(--spacing-inline); right: var(--spacing-inline); }
+}
+
+
 /* ══ NAVIGATION ══════════════════════════════════════════════════════════ */
 
 /* Sur grand écran l'enveloppe disparaît et les flèches reprennent leur place de

@@ -1633,6 +1633,7 @@ function retirerDuDepot(cle) {
 }
 
 function viderDepot() {
+  oublierBrouillon();
   depot.forEach(d => { if (d.apercu?.startsWith('blob:')) URL.revokeObjectURL(d.apercu); });
   depot = [];
   majDepot();
@@ -1641,6 +1642,7 @@ function viderDepot() {
 const DEPOT_ETATS = { attente: '', envoi: 'envoi…', ok: '✓ envoyée' };
 
 function majDepot() {
+  sauverBrouillon();
   const hote = document.getElementById('depotListe');
   const envoi = document.getElementById('depotEnvoi');
   const zone = document.getElementById('depotZone');
@@ -1951,9 +1953,10 @@ function normaliserRecette(r) {
   return {
     title:              r.title || '',
     description:        r.description || '',
-    // Le modèle d'abord, la ressemblance ensuite : lui a lu la fiche, la
-    // ressemblance ne fait que compter des ingrédients communs.
-    category_id:        chapitreId(r.category),
+    // Idempotente : un brouillon repris depuis IndexedDB porte déjà category_id,
+    // et plus le nom de chapitre rendu par le modèle. Sans ce ?? la reprise
+    // effaçait le chapitre choisi.
+    category_id:        r.category_id ?? chapitreId(r.category),
     attribution:        r.attribution || '',
     servings:           r.servings || null,
     servings_unit:      r.servings_unit || 'personnes',
@@ -1975,8 +1978,8 @@ function normaliserRecette(r) {
     // Les groupes sont-ils des variantes alternatives, ou les parties d'un même
     // plat ? Le modèle ne le dit pas, c'est un choix éditorial. On part du sens
     // le plus courant (les parties, 54 recettes sur 55) et l'aperçu porte la
-    // bascule.
-    groups_are_variants: false,
+    // bascule — que l'on préserve à la reprise d'un brouillon.
+    groups_are_variants: !!r.groups_are_variants,
     lisibilite:         r.lisibilite || 'partielle',
     incertitudes:       r.incertitudes || []
   };
@@ -2051,6 +2054,8 @@ const LISIBILITE = {
 };
 
 function dessinerApercu() {
+  // Toute retouche structurelle passe ici : c'est le bon endroit pour graver.
+  sauverBrouillon();
   const hote = document.getElementById('depotApercu');
   if (!hote || !brouillon) return;
   const b = brouillon;
@@ -2240,6 +2245,7 @@ document.addEventListener('input', e => {
       ? (parseInt(el.value, 10) || null)
       : el.value;
   }
+  sauverBrouillon();
 });
 
 // La donnée reste plate, comme en base : une liste d'ingrédients qui portent
@@ -2315,22 +2321,118 @@ function messageApercu(texte, type) {
   zone.className = 'submit-feedback' + (type ? ' submit-feedback--' + type : '');
 }
 
-async function resoudreIngredients(noms) {
-  // Le vocabulaire entier fait 347 lignes : on le charge d'un coup et on
-  // rapproche sans tenir compte de la casse. Comparer en base avec .in() est
-  // sensible à la casse et créerait « Beurre » à côté de « beurre ».
-  const { data: existants, error } = await sbClient.from('ingredients').select('id,name');
-  if (error) throw new Error(error.message);
-  const parNom = new Map(existants.map(e => [e.name.trim().toLowerCase(), e.id]));
+// ── LE BROUILLON SURVIT À LA FERMETURE ───────────────────────────────────────
+// Tout vivait dans la mémoire de la page : un onglet fermé, un téléphone qui
+// recycle l'onglet, un rechargement par réflexe, et la photo comme les
+// corrections disparaissaient. Il fallait reprendre la photo du feuillet.
+//
+// IndexedDB et pas localStorage : une photo de feuillet fait plusieurs mégaoctets
+// et ferait sauter le quota de localStorage, qui ne stocke d'ailleurs que du
+// texte. IndexedDB accepte les fichiers tels quels.
+//
+// Rien ne part sur le réseau : c'est un brouillon, il reste sur l'appareil de la
+// personne jusqu'à ce qu'elle publie.
 
-  const manquants = [...new Set(noms.filter(n => !parNom.has(n.toLowerCase())))];
-  if (manquants.length) {
-    const { data: crees, error: errC } = await sbClient
-      .from('ingredients').insert(manquants.map(name => ({ name }))).select('id,name');
-    if (errC) throw new Error(errC.message);
-    crees.forEach(c => parNom.set(c.name.trim().toLowerCase(), c.id));
-  }
-  return parNom;
+const BROUILLON_BASE = 'livre-recettes-brouillon';
+const BROUILLON_MAGASIN = 'depots';
+const BROUILLON_CLE = 'courant';
+
+function ouvrirBaseBrouillon() {
+  return new Promise((resolve, reject) => {
+    if (!window.indexedDB) return reject(new Error('IndexedDB indisponible'));
+    const requete = indexedDB.open(BROUILLON_BASE, 1);
+    requete.onupgradeneeded = () => {
+      const base = requete.result;
+      if (!base.objectStoreNames.contains(BROUILLON_MAGASIN)) base.createObjectStore(BROUILLON_MAGASIN);
+    };
+    requete.onsuccess = () => resolve(requete.result);
+    requete.onerror = () => reject(requete.error);
+  });
+}
+
+function transactionBrouillon(mode, action) {
+  return ouvrirBaseBrouillon().then(base => new Promise((resolve, reject) => {
+    const tx = base.transaction(BROUILLON_MAGASIN, mode);
+    const r = action(tx.objectStore(BROUILLON_MAGASIN));
+    tx.oncomplete = () => { base.close(); resolve(r?.result); };
+    tx.onerror = () => { base.close(); reject(tx.error); };
+  }));
+}
+
+// Écriture groupée : la saisie déclenche un événement par touche, on ne va pas
+// réécrire les photos à chaque lettre.
+let sauvegardeEnAttente = null;
+
+function sauverBrouillon() {
+  if (!brouillons.length && !depot.length) return;
+  clearTimeout(sauvegardeEnAttente);
+  sauvegardeEnAttente = setTimeout(async () => {
+    try {
+      await transactionBrouillon('readwrite', magasin => magasin.put({
+        enregistreLe: Date.now(),
+        apercuIndex,
+        brouillons,
+        // Les fichiers partent tels quels ; l'aperçu se régénère à la reprise.
+        depot: depot.map(p => ({
+          cle: p.cle, file: p.file, chemin: p.chemin, url: p.url, taille: p.taille
+        }))
+      }, BROUILLON_CLE));
+    } catch (err) {
+      // Un brouillon non sauvé ne doit jamais empêcher de continuer à saisir.
+      console.info('Brouillon non sauvegardé :', err.message);
+    }
+  }, 400);
+}
+
+function oublierBrouillon() {
+  clearTimeout(sauvegardeEnAttente);
+  return transactionBrouillon('readwrite', m => m.delete(BROUILLON_CLE)).catch(() => {});
+}
+
+// Au démarrage : s'il reste un brouillon, on le PROPOSE, on ne le rouvre pas de
+// force. Quelqu'un qui vient lire une recette ne doit pas retomber sur son dépôt
+// de la semaine dernière.
+async function proposerBrouillon() {
+  let garde;
+  try { garde = await transactionBrouillon('readonly', m => m.get(BROUILLON_CLE)); }
+  catch { return; }
+  const aDesRecettes = !!garde?.brouillons?.length;
+  if (!aDesRecettes && !garde?.depot?.length) return;
+
+  const titre = aDesRecettes
+    ? (garde.brouillons[0].title?.trim() || 'une recette sans nom')
+    : (garde.depot.length > 1 ? `${garde.depot.length} feuillets` : 'un feuillet');
+  const quand = new Date(garde.enregistreLe);
+  const jour = quand.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
+
+  const barre = document.createElement('div');
+  barre.className = 'reprise';
+  barre.setAttribute('role', 'status');
+  barre.innerHTML = `
+    <span class="reprise-t">Tu avais commencé « ${echapper(titre)} » le ${jour}.</span>
+    <button class="reprise-oui" type="button">Reprendre</button>
+    <button class="reprise-non" type="button">Jeter</button>`;
+  document.body.appendChild(barre);
+
+  barre.querySelector('.reprise-non').onclick = async () => {
+    await oublierBrouillon();
+    barre.remove();
+  };
+  barre.querySelector('.reprise-oui').onclick = () => {
+    barre.remove();
+    depot = (garde.depot || []).map(p => ({
+      ...p,
+      // L'aperçu est une URL de mémoire : elle ne survit pas au rechargement, on
+      // la refabrique depuis le fichier conservé.
+      apercu: p.file ? URL.createObjectURL(p.file) : null
+    }));
+    apercuIndex = garde.apercuIndex || 0;
+    openSubmit();
+    majDepot();
+    // Sans recette lue, on rouvre à l'étape du dépôt : la personne relance la
+    // lecture elle-même, ce qui évite de consommer une lecture sans l'avoir voulu.
+    if (aDesRecettes) ouvrirApercu(garde.brouillons);
+  };
 }
 
 async function publierRecette() {
@@ -2349,48 +2451,82 @@ async function publierRecette() {
   const bouton = document.getElementById('apercuPublier');
   if (bouton) { bouton.disabled = true; bouton.textContent = 'Publication…'; }
 
+  // Ce qui vient d'être envoyé dans le bucket pendant CET essai. Si la suite
+  // échoue, on le retire : sans ça, chaque tentative ratée laisse un fichier
+  // orphelin dans le Storage — c'est l'origine des 18 Mo déjà présents.
+  const deposesMaintenant = [];
+
   try {
-    // 1. Les feuillets partent UNE seule fois, même s'ils portent plusieurs
-    // recettes. C'est tout l'intérêt du lien many-to-many : quatre documents
-    // sont déjà partagés par deux recettes dans le livre.
-    const documents = [];
+    // 1. Les feuillets montent d'abord : un fichier ne peut pas vivre dans une
+    // transaction SQL. Un feuillet déjà monté lors d'un essai précédent n'est pas
+    // renvoyé — c'est la seule partie qui survit à un échec, volontairement.
     for (let i = 0; i < depot.length; i++) {
+      if (depot[i].url) continue;
       messageApercu(depot.length > 1 ? `Feuillet ${i + 1} / ${depot.length}…` : 'Le feuillet…');
-      if (!depot[i].url) await envoyerFeuillet(depot[i], i);
-
-      const { data: doc, error } = await sbClient.from('recipe_documents').insert({
-        kind:        'manuscript',
-        bucket_id:   'recipe-photos',
-        object_path: depot[i].chemin,
-        public_url:  depot[i].url,
-        byte_size:   depot[i].taille ?? depot[i].file.size,
-        uploaded_by: currentUser.id
-      }).select('id').single();
-      if (error) throw new Error(error.message);
-      documents.push(doc.id);
+      await envoyerFeuillet(depot[i], i);
+      deposesMaintenant.push(depot[i].chemin);
     }
 
-    // 2. Puis chaque recette, rattachée à tous les feuillets du lot.
-    const identifiants = [];
-    for (let n = 0; n < brouillons.length; n++) {
-      messageApercu(brouillons.length > 1
-        ? `Recette ${n + 1} / ${brouillons.length} : ${brouillons[n].title}…`
-        : 'Création de la page…');
-      identifiants.push(await publierUne(brouillons[n], documents));
-    }
+    // 2. Puis TOUT le reste en une seule transaction, côté base : la page, les
+    // ingrédients, les étapes, les liens vers les feuillets, pour chaque recette
+    // du lot. Soit l'ensemble existe, soit rien n'existe. C'est ce qui rend un
+    // nouvel essai sans danger : avant, réessayer après un échec à mi-chemin
+    // republiait ce qui avait déjà réussi.
+    messageApercu(brouillons.length > 1
+      ? `Création des ${brouillons.length} pages…` : 'Création de la page…');
 
-    // Le livre se recharge et s'ouvre sur la première page créée. C'est la
-    // récompense : on voit sa recette prendre sa place, indexée partout.
+    const { data: identifiants, error } = await sbClient.rpc('publier_feuillet', {
+      feuillets: depot.map(p => ({
+        kind: 'manuscript', bucket_id: 'recipe-photos',
+        object_path: p.chemin, public_url: p.url,
+        byte_size: String(p.taille ?? p.file.size)
+      })),
+      recettes: brouillons.map(b => ({
+        title: b.title, category_id: b.category_id, description: b.description,
+        attribution: b.attribution, hand: currentMember?.display_name || currentUser.email,
+        servings: b.servings, servings_unit: b.servings_unit,
+        prep_time_minutes: b.prep_time_minutes, cook_time_minutes: b.cook_time_minutes,
+        rest_time_minutes: b.rest_time_minutes, difficulty: b.difficulty,
+        tags: b.tags, notes: b.notes, groups_are_variants: !!b.groups_are_variants,
+        ingredients: b.ingredients, steps: b.steps
+      }))
+    });
+    if (error) throw new Error(error.message);
+    if (!identifiants?.length) throw new Error('la base n\'a créé aucune page');
+
+    // Publié : le brouillon sauvegardé n'a plus de raison d'être.
+    // L'ORDRE COMPTE. viderDepot() appelle majDepot(), qui appelle
+    // sauverBrouillon() : si les brouillons étaient encore en mémoire à cet
+    // instant, la sauvegarde repartait juste après avoir été effacée, et la
+    // prochaine ouverture du site aurait proposé de reprendre une recette déjà
+    // publiée. On vide donc la mémoire AVANT, et on efface le disque APRÈS.
     depotEnCours = false;
-    viderDepot();
     brouillons = [];
     brouillon = null;
+    viderDepot();
+    await oublierBrouillon();
     document.getElementById('depotApercu').hidden = true;
     document.getElementById('submitPanel').classList.remove('submit-panel--large');
+    // Le livre se recharge et s'ouvre sur la première page créée. C'est la
+    // récompense : on voit sa recette prendre sa place, indexée partout.
     await rechargerLivre(identifiants[0]);
   } catch (err) {
     console.error('Publication impossible :', err);
-    messageApercu('✗ ' + err.message + '.', 'err');
+
+    // Rien n'a été écrit en base — la fonction est tout-ou-rien. On retire donc
+    // les fichiers montés à l'instant, pour que le bucket reste propre et qu'un
+    // nouvel essai reparte de zéro.
+    for (const chemin of deposesMaintenant) {
+      const page = depot.find(p => p.chemin === chemin);
+      try {
+        await sbClient.storage.from('recipe-photos').remove([chemin]);
+        if (page) { delete page.url; delete page.chemin; delete page.taille; }
+      } catch (menage) {
+        console.info('Feuillet non retiré du bucket :', menage.message);
+      }
+    }
+
+    messageApercu('✗ ' + err.message + '. Rien n\'a été enregistré, ta saisie est intacte : tu peux réessayer.', 'err');
     depotEnCours = false;
     if (bouton) {
       bouton.disabled = false;
@@ -2398,81 +2534,6 @@ async function publierRecette() {
         ? `Ajouter les ${brouillons.length} recettes au livre` : 'Ajouter au livre';
     }
   }
-}
-
-// Une recette : la page, ses ingrédients, ses étapes, ses liens vers les
-// feuillets déjà déposés. Renvoie son identifiant.
-async function publierUne(b, documents) {
-  const { data: slug, error: errSlug } = await sbClient.rpc('slug_libre', { titre: b.title });
-  if (errSlug) throw new Error(errSlug.message);
-
-  // total_time_minutes n'est PAS écrit ici : c'est une colonne générée par la
-  // base à partir des trois durées. Tenter de la remplir fait échouer
-  // l'insertion entière.
-  const { data: recette, error: errR } = await sbClient.from('recipes').insert({
-    title:             b.title.trim(),
-    slug,
-    category_id:       b.category_id,
-    description:       b.description.trim() || null,
-    attribution:       b.attribution.trim() || null,
-    hand:              currentMember?.display_name || currentUser.email,
-    hand_user_id:      currentUser.id,
-    servings:          b.servings,
-    servings_unit:     b.servings_unit.trim() || null,
-    prep_time_minutes: b.prep_time_minutes,
-    cook_time_minutes: b.cook_time_minutes,
-    rest_time_minutes: b.rest_time_minutes,
-    difficulty:        b.difficulty,
-    tags:              b.tags.length ? b.tags : null,
-    notes:             b.notes.trim() || null,
-    groups_are_variants: !!b.groups_are_variants
-  }).select('id').single();
-  if (errR) throw new Error(`${b.title} : ${errR.message}`);
-
-  // Les ingrédients : sans eux la recette n'apparaît sous aucune entrée de
-  // l'index par ingrédient, elle devient introuvable autrement que par son nom.
-  const lignes = b.ingredients.filter(i => i.name.trim());
-  if (lignes.length) {
-    const parNom = await resoudreIngredients(lignes.map(i => i.name.trim()));
-    const { error } = await sbClient.from('recipe_ingredients').insert(
-      lignes.map((i, n) => ({
-        recipe_id:     recette.id,
-        ingredient_id: parNom.get(i.name.trim().toLowerCase()),
-        quantity:      i.quantity,
-        unit:          (i.unit || '').trim() || null,
-        preparation:   (i.preparation || '').trim() || null,
-        group_label:   (i.group_label || '').trim() || null,
-        display_order: n + 1
-      }))
-    );
-    if (error) throw new Error(`${b.title}, ingrédients : ${error.message}`);
-  }
-
-  const etapes = b.steps.filter(st => st.description.trim());
-  if (etapes.length) {
-    const { error } = await sbClient.from('recipe_steps').insert(
-      etapes.map((st, n) => ({
-        recipe_id:        recette.id,
-        step_number:      n + 1,
-        title:            (st.title || '').trim() || null,
-        description:      st.description.trim(),
-        duration_minutes: st.duration_minutes
-      }))
-    );
-    if (error) throw new Error(`${b.title}, préparation : ${error.message}`);
-  }
-
-  if (documents.length) {
-    const { error } = await sbClient.from('recipe_document_links').insert(
-      documents.map((id, i) => ({
-        recipe_id: recette.id, document_id: id, display_order: i,
-        page_label: documents.length > 1 ? `Page ${i + 1}` : null
-      }))
-    );
-    if (error) throw new Error(`${b.title}, feuillet : ${error.message}`);
-  }
-
-  return recette.id;
 }
 
 async function envoyerFeuillet(page, i) {
@@ -2745,6 +2806,11 @@ async function initAuth() {
     });
 
     buildTOC();
+
+    // Un dépôt laissé en route se propose à la reprise, sans bloquer l'ouverture
+    // du livre. Voir proposerBrouillon() : la photo et les corrections sont
+    // gardées sur l'appareil, pas envoyées.
+    setTimeout(() => proposerBrouillon().catch(() => {}), 1200);
 
     // On accepte les deux formes : le slug (#choucroute-denise) et l'ancien
     // identifiant (#9), pour que les liens déjà partagés continuent de marcher.
