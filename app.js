@@ -1911,12 +1911,49 @@ async function analyserDepot() {
 // dans le livre, avec les mêmes polices, la même mise en page, les mêmes
 // colonnes. Chaque élément est modifiable sur place. On corrige ce qu'on voit.
 
+// Rapprocher un nom de chapitre de son identifiant. C'était une égalité stricte,
+// et le serveur envoyait des noms abrégés (« Desserts ») qui ne correspondaient à
+// aucun chapitre réel (« Desserts & Pâtisseries ») : quatre chapitres sur six
+// retombaient à vide. Le serveur envoie maintenant les vrais noms, mais on tolère
+// quand même l'à-peu-près — accents, casse, et le premier mot avant le « & » —
+// pour qu'un renommage de chapitre ne re-casse pas le rangement en silence.
+function chapitreId(nom) {
+  if (!nom) return null;
+  const propre = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                       .toLowerCase().split('&')[0].replace(/[^a-z]/g, '');
+  const cible = propre(String(nom));
+  if (!cible) return null;
+  const trouve = Object.keys(CATS).find(id => propre(CATS[id]) === cible);
+  return trouve ? parseInt(trouve, 10) : null;
+}
+
+// Pas de classement automatique du chapitre sans modèle : mesuré, et écarté.
+// Idée testée : comparer la nouvelle recette aux 122 déjà classées et lui donner le
+// chapitre de celles qui lui ressemblent. Évalué « une contre toutes les autres »
+// sur tout le livre, en faisant varier le signal (ingrédients communs, mots du
+// titre, les deux) et le seuil de décision :
+//
+//   ingrédients seuls  38 % de justes,  6 % de FAUX, 57 % laissés vides
+//   titre + ingrédients 51 % de justes, 11 % de FAUX
+//   titre seul          52 % de justes, 20 % de FAUX
+//
+// Et les erreurs sont précisément celles qu'un humain ne fait pas : « Coques à la
+// Meunière » rangé en Plats au lieu de Poissons, « Faisan Farci » en Plats au lieu
+// de Gibier. La ressemblance d'ingrédients ne voit pas ce qui fonde un chapitre —
+// le rôle du plat dans le repas et sa famille — elle ne voit que du contenu.
+//
+// Le calcul est asymétrique : remplir juste économise UN clic sur un menu déroulant
+// déjà sous les yeux dans l'aperçu, tandis que remplir faux range une recette dans
+// le mauvais chapitre sans que personne aille le vérifier. Un champ vide se voit,
+// un champ faux ne se voit pas. On laisse donc la personne choisir.
+
 function normaliserRecette(r) {
-  const cat = Object.keys(CATS).find(id => CATS[id] === r.category);
   return {
     title:              r.title || '',
     description:        r.description || '',
-    category_id:        cat ? parseInt(cat, 10) : null,
+    // Le modèle d'abord, la ressemblance ensuite : lui a lu la fiche, la
+    // ressemblance ne fait que compter des ingrédients communs.
+    category_id:        chapitreId(r.category),
     attribution:        r.attribution || '',
     servings:           r.servings || null,
     servings_unit:      r.servings_unit || 'personnes',

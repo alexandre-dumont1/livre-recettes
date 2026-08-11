@@ -90,6 +90,66 @@ function quotaDepasse(cle) {
   return false;
 }
 
+// ── LE VOCABULAIRE DU LIVRE, LU À SA SOURCE ──────────────────────────────────
+// Les chapitres étaient recopiés ici en dur, sous une forme abrégée : « Entrées »,
+// « Desserts », « Gibier », « Accompagnements ». Or les vrais chapitres s'appellent
+// « Entrées & Apéritifs », « Desserts & Pâtisseries », « Gibier & Volaille
+// festive », « Accompagnements & Légumes ». Le navigateur rapproche le nom rendu
+// du nom en base par égalité STRICTE : quatre chapitres sur six ne pouvaient donc
+// jamais correspondre, et la recette retombait sans chapitre — absente du
+// sommaire. Deux listes recopiées finissent toujours par diverger : on lit celle
+// de la base, et il n'y a plus qu'une seule vérité.
+//
+// Même raisonnement pour les étiquettes. Rien ne les contraignait, alors que le
+// livre a son vocabulaire (dessert, entrée, tarte, classique, make-ahead…). Sans
+// la liste sous les yeux, le modèle forge « Dessert » à côté de « dessert » et
+// fragmente l'index. On lui donne les étiquettes déjà en usage.
+
+const CHAPITRES_DE_SECOURS = [
+  'Entrées & Apéritifs', 'Plats', 'Accompagnements & Légumes',
+  'Poissons', 'Desserts & Pâtisseries', 'Gibier & Volaille festive'
+];
+const VOCABULAIRE_DUREE_MS = 10 * 60 * 1000;
+let vocabulaire = { chapitres: CHAPITRES_DE_SECOURS, etiquettes: [], expire: 0 };
+
+async function vocabulaireDuLivre() {
+  if (Date.now() < vocabulaire.expire) return vocabulaire;
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return vocabulaire;
+
+  const entetes = { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` };
+  try {
+    const [rc, rt] = await Promise.all([
+      fetch(`${SUPABASE_URL}/rest/v1/recipe_categories?select=name&order=display_order,id`, { headers: entetes }),
+      fetch(`${SUPABASE_URL}/rest/v1/recipes?select=tags`, { headers: entetes })
+    ]);
+    if (!rc.ok) throw new Error(`chapitres ${rc.status}`);
+
+    const chapitres = (await rc.json()).map(c => c.name).filter(Boolean);
+    let etiquettes = [];
+    if (rt.ok) {
+      // Les plus employées d'abord : ce sont celles qu'il faut réutiliser. Une
+      // étiquette vue une seule fois n'est pas encore un usage du livre.
+      const compte = new Map();
+      (await rt.json()).forEach(r => (r.tags || []).forEach(t => {
+        const n = String(t).trim();
+        if (n) compte.set(n, (compte.get(n) || 0) + 1);
+      }));
+      etiquettes = [...compte.entries()].sort((a, b) => b[1] - a[1]).slice(0, 60).map(e => e[0]);
+    }
+    vocabulaire = {
+      chapitres: chapitres.length ? chapitres : CHAPITRES_DE_SECOURS,
+      etiquettes,
+      expire: Date.now() + VOCABULAIRE_DUREE_MS
+    };
+  } catch (err) {
+    // On garde la liste de secours plutôt que de refuser la transcription : elle
+    // porte les vrais noms, elle est simplement figée.
+    console.error('[transcrire] vocabulaire du livre indisponible :', err.message);
+    vocabulaire.expire = Date.now() + 60_000;   // on retentera dans une minute
+  }
+  return vocabulaire;
+}
+
 // Le schéma est imposé au modèle : sans lui, il rend du texte libre qu'il
 // faudrait deviner. Les champs restent tous facultatifs, une fiche manuscrite ne
 // dit presque jamais la difficulté ni le temps de repos.
@@ -99,7 +159,8 @@ const SCHEMA_UNE_RECETTE = {
     title: { type: 'string' },
     description: { type: 'string' },
     attribution: { type: 'string' },
-    category: { type: 'string', enum: ['Entrées', 'Plats', 'Poissons', 'Desserts', 'Gibier', 'Accompagnements'] },
+    // La liste est posée à l'exécution, depuis les chapitres réels du livre.
+    category: { type: 'string' },
     servings: { type: 'integer' },
     servings_unit: { type: 'string' },
     prep_time_minutes: { type: 'integer' },
@@ -144,11 +205,14 @@ const SCHEMA_UNE_RECETTE = {
 // Un feuillet peut porter plusieurs recettes : deux versions des madeleines, la
 // crème anglaise à côté des œufs au lait. Quatre documents sont déjà dans ce cas
 // en base. Le modèle rend donc TOUJOURS une liste, même à un seul élément.
-const SCHEMA_RECETTE = {
-  type: 'object',
-  properties: { recettes: { type: 'array', items: SCHEMA_UNE_RECETTE } },
-  required: ['recettes']
-};
+// Le schéma du moment : les chapitres du livre y deviennent une liste fermée, ce
+// qui est la seule façon d'être sûr que le nom rendu soit exactement celui d'un
+// chapitre existant. Une consigne, même insistante, se fait contourner.
+function schemaAvec(chapitres) {
+  const une = { ...SCHEMA_UNE_RECETTE, properties: { ...SCHEMA_UNE_RECETTE.properties } };
+  une.properties.category = { type: 'string', enum: chapitres };
+  return { type: 'object', properties: { recettes: { type: 'array', items: une } }, required: ['recettes'] };
+}
 
 const CONSIGNE = `Tu transcris une fiche de recette de cuisine familiale, souvent manuscrite en français, parfois photographiée de travers.
 
@@ -171,6 +235,36 @@ Utilise aussi group_label à l'intérieur d'une recette quand la fiche sépare e
 En cas de doute, rends UNE recette : fusionner deux recettes est un clic dans l'aperçu, alors qu'une page fantôme publiée doit être supprimée à la main en base.
 
 Rends uniquement du JSON conforme au schéma.`;
+
+// La consigne du moment. Le rangement n'était pas expliqué du tout : le modèle
+// choisissait au flair, et une tarte de légumes servie en plat tombait d'un côté
+// ou de l'autre selon l'humeur. On lui donne le critère qu'un cuisinier utilise :
+// le rôle de ce plat dans le repas, pas ce qu'il contient.
+function consigne(chapitres, etiquettes) {
+  const bloc = [CONSIGNE, '', 'DANS QUEL CHAPITRE ?', '',
+    `Les chapitres du livre sont : ${chapitres.map(c => `« ${c} »`).join(', ')}.`,
+    '',
+    'Tranche par le RÔLE DU PLAT DANS LE REPAS, pas par ses ingrédients :',
+    '- ce qui se mange avant le plat, debout ou assis, va aux entrées et apéritifs ;',
+    '- un légume ou une féculent qui accompagne une viande va aux accompagnements, même s\'il est copieux ;',
+    '- le même légume s\'il constitue le plat entier va aux plats ;',
+    '- le poisson a son chapitre : il ne va pas dans les plats, même en plat principal ;',
+    '- le gibier et la volaille de fête ont le leur, pour la même raison ;',
+    '- tout ce qui est sucré et se mange en fin de repas va aux desserts et pâtisseries.',
+    '',
+    'Si la fiche ne permet vraiment pas de trancher, laisse le chapitre absent : quelqu\'un le choisira. Un mauvais chapitre est plus coûteux qu\'un chapitre vide, parce que personne ne va le vérifier.'
+  ];
+
+  if (etiquettes.length) {
+    bloc.push('', 'LES ÉTIQUETTES', '',
+      `Réutilise en priorité celles déjà en usage dans le livre, à l'identique, minuscules comprises : ${etiquettes.join(', ')}.`,
+      'N\'en forge une nouvelle que si aucune ne décrit la recette. Une étiquette écrite « Dessert » à côté de « dessert » fait deux entrées d\'index pour la même chose, et coupe l\'index en deux.',
+      'Trois à six étiquettes suffisent.');
+  }
+
+  bloc.push('', 'Rends uniquement du JSON conforme au schéma.');
+  return bloc.join('\n');
+}
 
 function litCorps(req, maxOctets) {
   return new Promise((resolve, reject) => {
@@ -248,7 +342,12 @@ async function transcrire(req, res) {
   const texte = typeof corps?.texte === 'string' ? corps.texte.slice(0, 60_000).trim() : '';
   if (!valides.length && !texte) return json(res, 400, { erreur: 'aucune-page-exploitable' });
 
-  const parts = [{ text: CONSIGNE }];
+  // Les chapitres et les étiquettes viennent de la base, pas d'une copie figée
+  // dans ce fichier : c'est ce qui garantit que le nom rendu soit exactement
+  // celui d'un chapitre existant, aujourd'hui comme après un renommage.
+  const { chapitres, etiquettes } = await vocabulaireDuLivre();
+
+  const parts = [{ text: consigne(chapitres, etiquettes) }];
   if (texte) {
     parts.push({ text: `Voici le texte de la fiche, déjà extrait du PDF. Structure-le sans rien inventer :\n\n${texte}` });
   }
@@ -267,7 +366,7 @@ async function transcrire(req, res) {
           contents: [{ parts }],
           generationConfig: {
             responseMimeType: 'application/json',
-            responseSchema: SCHEMA_RECETTE,
+            responseSchema: schemaAvec(chapitres),
             temperature: 0   // on transcrit, on n'imagine pas
           }
         }),
