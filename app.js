@@ -512,10 +512,10 @@ async function renderLeft(recipe) {
     return `<div class="step-item">
       <span class="step-num">${String(s.step_number).padStart(2, '0')}</span>
       <div class="step-body">
-        <div class="step-title-row">
+        ${s.title || dur || temp ? `<div class="step-title-row">
           <span class="step-title">${s.title || ''}</span>
           ${dur}${temp}
-        </div>
+        </div>` : ''}
         <p class="step-desc">${s.description}</p>
       </div>
     </div>`;
@@ -553,21 +553,12 @@ async function renderLeft(recipe) {
       }).join('')}
     </div>` : '';
 
-  let stepsHTML = '';
-  etapesCommunes.forEach(s => {
-    const dur = s.duration_minutes ? `<span class="step-badge badge-time">${ft(s.duration_minutes)}</span>` : '';
-    const temp = s.temperature_celsius ? `<span class="step-badge badge-temp">${s.temperature_celsius}\u00b0C</span>` : '';
-    stepsHTML += `<div class="step-item">
-      <span class="step-num">${String(s.step_number).padStart(2, '0')}</span>
-      <div class="step-body">
-        <div class="step-title-row">
-          <span class="step-title">${s.title}</span>
-          ${dur}${temp}
-        </div>
-        <p class="step-desc">${s.description}</p>
-      </div>
-    </div>`;
-  });
+  // Une seule fabrique d'étape, blocEtape() ci-dessus. Il y en avait deux, presque
+  // identiques, et la copie avait dérivé : elle écrivait \${s.title} sans repli, donc
+  // « null » s'affichait en titre pour toute étape sans titre. Invisible jusqu'ici
+  // parce qu'aucune des 122 recettes d'origine n'avait d'étape sans titre — les six
+  // granolas importés en ont trente-six.
+  const stepsHTML = etapesCommunes.map(blocEtape).join('');
 
   const noteHTML = recipe.notes ? `
     <div class="note-row">
