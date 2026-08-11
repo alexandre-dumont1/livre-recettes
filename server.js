@@ -35,6 +35,9 @@ const FICHIERS = {
   '/app.js': { file: 'app.js', type: 'text/javascript; charset=utf-8' },
   '/styles.css': { file: 'styles.css', type: 'text/css; charset=utf-8' },
   '/tokens.css': { file: 'tokens.css', type: 'text/css; charset=utf-8' },
+  // Bibliothèque tierce figée dans le dépôt, faute d'étape de construction.
+  // Provenance, licence et empreinte : vendor/README.md.
+  '/vendor/page-flip.browser.js': { file: 'vendor/page-flip.browser.js', type: 'text/javascript; charset=utf-8' },
 };
 
 // Le HTML n'est jamais mis en cache, sinon une correction de recette peut mettre
