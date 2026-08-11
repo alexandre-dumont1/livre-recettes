@@ -69,7 +69,19 @@ window.APP_CONFIG = {
 // décrit — les photos et les scans.
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+
+// L'alias plutôt qu'une version figée, et c'est un choix appris à la dure : une
+// clé neuve créée en août 2026 reçoit « models/gemini-2.5-flash is no longer
+// available to new users » — le modèle qui était écrit ici en dur était retiré aux
+// nouveaux comptes, donc la transcription échouait au PREMIER essai, pour tout le
+// monde sauf ceux dont la clé était assez ancienne.
+//
+// Un livre de recettes de famille n'a pas de mainteneur qui surveille les
+// annonces de Google. Mieux vaut suivre l'alias, quitte à ce que le modèle change
+// sous nos pieds, que de pointer une version qui mourra en silence. GEMINI_MODEL
+// permet d'épingler si un jour on veut figer.
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-flash-latest';
+const GEMINI_REPLI = 'gemini-flash-latest';
 const TRANSCRIPTION_MAX_OCTETS = 8 * 1024 * 1024;
 
 // Le quota gratuit se compte à la journée : un seul membre ne doit pas pouvoir
@@ -112,7 +124,7 @@ const CHAPITRES_DE_SECOURS = [
 const VOCABULAIRE_DUREE_MS = 10 * 60 * 1000;
 let vocabulaire = { chapitres: CHAPITRES_DE_SECOURS, etiquettes: [], expire: 0 };
 
-async function vocabulaireDuLivre() {
+export async function vocabulaireDuLivre() {
   if (Date.now() < vocabulaire.expire) return vocabulaire;
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return vocabulaire;
 
@@ -199,7 +211,14 @@ const SCHEMA_UNE_RECETTE = {
     lisibilite: { type: 'string', enum: ['bonne', 'partielle', 'illisible'] },
     incertitudes: { type: 'array', items: { type: 'string' } }
   },
-  required: ['title', 'lisibilite']
+  // ingredients et steps sont OBLIGATOIRES, et c'est le correctif le plus
+  // important de ce schéma. Facultatifs, le modèle avait le droit de les omettre —
+  // et il le faisait une fois sur deux, de façon instable : même modèle, même
+  // réglage, une transcription complète puis une fiche réduite au titre et au
+  // nombre de personnes. Une recette sans ingrédients ni étapes est inutilisable.
+  // Obligatoires, ils doivent être présents ; ils peuvent rester vides si la fiche
+  // est vraiment illisible, ce que lisibilite dira.
+  required: ['title', 'lisibilite', 'ingredients', 'steps']
 };
 
 // Un feuillet peut porter plusieurs recettes : deux versions des madeleines, la
@@ -208,7 +227,7 @@ const SCHEMA_UNE_RECETTE = {
 // Le schéma du moment : les chapitres du livre y deviennent une liste fermée, ce
 // qui est la seule façon d'être sûr que le nom rendu soit exactement celui d'un
 // chapitre existant. Une consigne, même insistante, se fait contourner.
-function schemaAvec(chapitres) {
+export function schemaAvec(chapitres) {
   const une = { ...SCHEMA_UNE_RECETTE, properties: { ...SCHEMA_UNE_RECETTE.properties } };
   une.properties.category = { type: 'string', enum: chapitres };
   return { type: 'object', properties: { recettes: { type: 'array', items: une } }, required: ['recettes'] };
@@ -220,6 +239,10 @@ Règles absolues :
 - Ne recopie QUE ce qui est écrit. N'invente jamais une quantité, un temps, une étape ou un ingrédient qui ne figure pas sur la fiche. Un champ absent doit rester absent.
 - Garde les mots de la fiche, y compris les tournures anciennes ou régionales ("faire revenir", "un verre à moutarde de"). Ne modernise pas, ne reformule pas.
 - Découpe les étapes comme la fiche les découpe. Si elle est écrite en un seul paragraphe, rends une seule étape.
+- Recopie TOUS les ingrédients et TOUTES les étapes. Ce sont eux la recette : une fiche rendue sans eux ne sert à rien, on ne peut pas cuisiner avec un titre.
+- Les durées se donnent en MINUTES, converties si la fiche écrit autrement : « 1 h 20 » vaut 80, « 1 h » vaut 60, « une demi-heure » vaut 30. Une durée écrite sur la fiche mais laissée vide est une perte sèche.
+- Les quantités vont dans quantity et unit, pas dans le nom : « 1 épaule d'agneau de 1,5 kg » donne quantity 1,5, unit « kg », name « épaule d'agneau ». Le nom doit rester le nom de l'ingrédient, c'est lui qui relie la recette à l'index.
+- Une ligne par ingrédient : « sel et poivre » fait deux lignes, « 3 pieds de blettes » dont on utilise séparément les côtes et les feuilles peut en faire deux si la fiche les distingue.
 - attribution : uniquement si la fiche cite une origine extérieure (un chef, un livre, un magazine, un site). Ne mets jamais un prénom de famille dedans.
 - lisibilite : "bonne" si tu es sûr de tout, "partielle" si des passages sont douteux, "illisible" si tu n'as pu lire presque rien.
 - incertitudes : la liste des passages dont tu n'es pas sûr, en citant les mots concernés. C'est ce qui permettra à la personne de vérifier les bons endroits.
@@ -240,7 +263,7 @@ Rends uniquement du JSON conforme au schéma.`;
 // choisissait au flair, et une tarte de légumes servie en plat tombait d'un côté
 // ou de l'autre selon l'humeur. On lui donne le critère qu'un cuisinier utilise :
 // le rôle de ce plat dans le repas, pas ce qu'il contient.
-function consigne(chapitres, etiquettes) {
+export function consigne(chapitres, etiquettes) {
   const bloc = [CONSIGNE, '', 'DANS QUEL CHAPITRE ?', '',
     `Les chapitres du livre sont : ${chapitres.map(c => `« ${c} »`).join(', ')}.`,
     '',
@@ -356,27 +379,53 @@ async function transcrire(req, res) {
   }
   valides.forEach(p => parts.push({ inlineData: { mimeType: p.mime, data: p.data } }));
 
+  // Le modèle demandé, puis l'alias en rattrapage. Un modèle épinglé finit
+  // toujours par être retiré, et Google répond alors 404 « no longer available » —
+  // ce qui, sans ce rattrapage, casse la transcription pour tout le monde jusqu'à
+  // ce que quelqu'un s'en aperçoive. Ici, on réessaie une fois avec l'alias, qui
+  // désigne par construction un modèle vivant.
+  let modele = GEMINI_MODEL;
+  let deuxiemeChance = GEMINI_MODEL !== GEMINI_REPLI;
+
+  const appelle = nom => fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${nom}:generateContent`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_API_KEY },
+      body: JSON.stringify({
+        contents: [{ parts }],
+        generationConfig: {
+          responseMimeType: 'application/json',
+          responseSchema: schemaAvec(chapitres),
+          // Pas de temperature. Elle était figée à 0 avec l'idée « on transcrit,
+          // on n'imagine pas » — juste pour la génération 2.5, faux depuis.
+          // Google écrit pour les modèles Gemini 3 : « nous recommandons fortement
+          // de garder la température à 1.0 ; la baisser peut mener à des
+          // comportements inattendus, boucles ou performances dégradées ».
+          maxOutputTokens: 8192   // une fiche dense tient largement dedans
+        }
+      }),
+      signal: AbortSignal.timeout(90_000)
+    }
+  );
+
   try {
-    const r = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_API_KEY },
-        body: JSON.stringify({
-          contents: [{ parts }],
-          generationConfig: {
-            responseMimeType: 'application/json',
-            responseSchema: schemaAvec(chapitres),
-            temperature: 0   // on transcrit, on n'imagine pas
-          }
-        }),
-        signal: AbortSignal.timeout(90_000)
-      }
-    );
+    let r = await appelle(modele);
+
+    // 404 = ce modèle n'existe plus, ou n'est pas ouvert à cette clé. C'est
+    // exactement ce qui est arrivé avec gemini-2.5-flash, retiré aux nouveaux
+    // comptes : la transcription échouait au premier essai. On rejoue une fois
+    // avec l'alias avant d'abandonner.
+    if (r.status === 404 && deuxiemeChance) {
+      console.error(`[transcrire] ${modele} indisponible, nouvel essai avec ${GEMINI_REPLI}`);
+      modele = GEMINI_REPLI;
+      deuxiemeChance = false;
+      r = await appelle(modele);
+    }
 
     if (!r.ok) {
       const detail = await r.text();
-      console.error(`[transcrire] modèle ${r.status} :`, detail.slice(0, 400));
+      console.error(`[transcrire] modèle ${modele} ${r.status} :`, detail.slice(0, 400));
       // 429 chez Google = quota gratuit épuisé pour aujourd'hui. On le dit tel
       // quel, c'est une information utile et pas une panne.
       return json(res, r.status === 429 ? 429 : 502, {
