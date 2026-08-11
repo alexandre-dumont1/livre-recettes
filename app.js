@@ -1975,10 +1975,12 @@ function normaliserRecette(r) {
                           title: s.title || '', description: s.description || '',
                           duration_minutes: s.duration_minutes || null
                         })),
-    // Les groupes sont-ils des variantes alternatives, ou les parties d'un même
-    // plat ? Le modèle ne le dit pas, c'est un choix éditorial. On part du sens
-    // le plus courant (les parties, 54 recettes sur 55) et l'aperçu porte la
-    // bascule — que l'on préserve à la reprise d'un brouillon.
+    // Les groupes sont-ils des variantes alternatives (tuiles, une seule ouverte)
+    // ou les parties d'un même plat (affichées ensemble) ? Le modèle le dit
+    // désormais : il a lu la fiche, il sait si chaque nom de groupe désigne un plat
+    // entier. C'était forcé à false, donc une page de salades composées importée
+    // perdait sa présentation en tuiles. L'aperçu garde la bascule pour arbitrer,
+    // et la valeur survit à la reprise d'un brouillon.
     groups_are_variants: !!r.groups_are_variants,
     lisibilite:         r.lisibilite || 'partielle',
     incertitudes:       r.incertitudes || []

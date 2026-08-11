@@ -208,6 +208,12 @@ const SCHEMA_UNE_RECETTE = {
         required: ['description']
       }
     },
+    // Les group_label sont-ils des variantes alternatives, ou les parties d'un
+    // même plat ? Le livre ne les présente pas pareil — tuiles cliquables d'un
+    // côté, blocs affichés ensemble de l'autre — et seul quelqu'un qui a lu la
+    // fiche peut trancher. C'était laissé à false d'office, donc la page des
+    // salades composées perdait sa présentation en tuiles à l'import.
+    groups_are_variants: { type: 'boolean' },
     lisibilite: { type: 'string', enum: ['bonne', 'partielle', 'illisible'] },
     incertitudes: { type: 'array', items: { type: 'string' } }
   },
@@ -254,6 +260,13 @@ Rends PLUSIEURS recettes seulement si la fiche porte des préparations réelleme
 Rends UNE SEULE recette, avec des groupes d'ingrédients (group_label), quand la fiche est une liste de variantes ou de combinaisons SANS méthode propre à chacune. Exemple typique : une page "Salades composées" avec huit salades nommées, chacune n'étant qu'une liste d'ingrédients. Le titre de chaque variante devient son group_label, et la recette garde le titre de la page.
 
 Utilise aussi group_label à l'intérieur d'une recette quand la fiche sépare elle-même les ingrédients : "Pour la pâte" / "Pour la garniture" / "Marinade".
+
+groups_are_variants : le même group_label porte deux sens opposés, et c'est toi qui dois les séparer, parce que le livre ne les présente pas pareil.
+
+- true : les groupes sont des ALTERNATIVES, on en choisit UNE et on ignore les autres. La page "Salades composées" et ses huit salades nommées : on cuisine la salade italienne OU la salade Boris, jamais les huit. Le livre les présente alors en tuiles, une seule ouverte à la fois.
+- false : les groupes sont les PARTIES d'un même plat, et il faut les avoir toutes sous les yeux pour cuisiner : "Marinade" puis "Cuisson" puis "Sauce", ou "Pour la pâte" puis "Pour la garniture". Le livre les affiche ensemble.
+
+C'est false dans l'immense majorité des cas — 54 des 55 pages à groupes du livre. Ne mets true que si le nom de chaque groupe désigne un plat entier et qu'aucune méthode ne les relie. Un signe qui ne trompe pas : si la fiche n'a pas d'étapes communes et que chaque groupe pourrait vivre seul, ce sont des variantes.
 
 En cas de doute, rends UNE recette : fusionner deux recettes est un clic dans l'aperçu, alors qu'une page fantôme publiée doit être supprimée à la main en base.
 
