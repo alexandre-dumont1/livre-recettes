@@ -207,21 +207,34 @@ body {
 }
 
 /* ── Le tournage de page ──
-   Le sens était inversé. Dans un livre, aller à la page SUIVANTE fait basculer la
-   page de DROITE vers la gauche, sur sa charnière côté reliure — donc son bord
-   gauche. Revenir en arrière fait basculer la page de GAUCHE vers la droite.
-   L'ancien code animait l'inverse : la page de gauche partait vers la droite pour
-   avancer, ce qui donnait la sensation de reculer.
+   Deux choses font le sens, et il fallait les deux :
+
+   1. QUELLE page bouge. Aller à la page SUIVANTE fait basculer celle de DROITE,
+      sur sa charnière côté reliure — donc son bord gauche. Reculer fait basculer
+      celle de GAUCHE, sur son bord droit. C'est réglé dans pageQuiTourne().
+
+   2. DE QUEL CÔTÉ elle bascule, et c'était là le vrai problème. Le signe de
+      rotateY décide si le bord libre part vers le fond ou vers le lecteur. Avec
+      un angle positif sur la page de droite, le bord libre s'enfonçait DERRIÈRE
+      le livre : la page se rabattait à plat vers l'arrière et se réduisait à un
+      filet au niveau de la reliure. Vérifié en capturant l'animation au ralenti :
+      avancer et reculer donnaient la même image en miroir, les deux convergeant
+      vers le pli, sans aucun repère de sens.
+
+   Une vraie page se SOULÈVE vers le lecteur avant de passer de l'autre côté.
+   D'où le signe inversé ici. On s'arrête juste avant la perpendiculaire : au-delà
+   on verrait le dos de la page, et la laisser traverser complètement creusait un
+   trou dans la moitié de page le temps que le contenu change.
 
    La rotation part de la charnière, jamais du centre : c'est ce qui fait la
    différence entre une page qui se tourne et une page qui se tord. */
 @keyframes tourne-avant {
   0%   { transform: rotateY(0); }
-  100% { transform: rotateY(var(--tourne-angle)); opacity: 0.1; }
+  100% { transform: rotateY(calc(-1 * var(--tourne-angle))); opacity: 0.1; }
 }
 @keyframes tourne-arriere {
   0%   { transform: rotateY(0); }
-  100% { transform: rotateY(calc(-1 * var(--tourne-angle))); opacity: 0.1; }
+  100% { transform: rotateY(var(--tourne-angle)); opacity: 0.1; }
 }
 /* La durée vit dans le token et app.js la lit : elle était écrite en dur des deux
    côtés, et le moindre écart laissait la page figée de profil le temps du
