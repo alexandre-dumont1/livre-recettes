@@ -31,7 +31,7 @@ const CAT_COLORS = {
   6: '#4a7a3a'
 };
 
-let allRecipes = [], filteredRecipes = [], currentIndex = -1, isAnimating = false, catFilter = 0;
+let allRecipes = [], filteredRecipes = [], currentIndex = -1, catFilter = 0;
 let ingrByRecipe = new Map();
 
 const cache = {};
@@ -128,7 +128,9 @@ function toggleFav(id) {
   const i = favs.indexOf(id);
   if (i === -1) favs.push(id); else favs.splice(i, 1);
   localStorage.setItem('recette-favoris', JSON.stringify(favs));
-  showPage(currentIndex);
+  // force : c'est la même recette, mais son étoile a changé. Sans ça, le livre
+  // verrait la page déjà en place et ne la refabriquerait pas.
+  if (currentIndex < 0) remplirCouverture(); else showPage(currentIndex, { force: true });
 }
 
 // ── COPIER LE LIEN ────────────────────────────────────────────────────────────
@@ -158,9 +160,12 @@ function buildTOCGroups(recipes) {
   return { grouped, groupOrder };
 }
 
-function showCover() {
-  currentIndex = -1;
-  history.replaceState(null, '', location.pathname);
+// Fabrique la garde et le menu dans les deux premiers feuillets du livre. Cette
+// fonction ne navigue pas : elle pose du papier. C'est arriverA(-1) qui tourne les
+// pages jusque-là. Le menu compte les favoris, donc on la rappelle à chaque retour
+// au menu plutôt que de garder un décompte périmé.
+function remplirCouverture() {
+  if (!feuillets.length) return;
 
   // ── Page gauche : la page de garde ──
   // Un vrai feuillet manuscrit en fond, désaturé et voilé : on voit de quoi le
@@ -237,10 +242,16 @@ function showCover() {
       <span class="garde-page-num">ii</span>
     </div>`;
 
-  document.getElementById('pageLeft').innerHTML = coverHTML;
-  document.getElementById('pageRight').innerHTML = menuHTML;
-  updateControls();
-  renderGardeFond();
+  feuillets[0].innerHTML = coverHTML;
+  feuillets[1].innerHTML = menuHTML;
+}
+
+// Revenir au menu. Sans animation : on y arrive par le titre du livre, un filtre
+// ou une recherche vide, jamais en tournant une page — ça, c'est changePage(-1)
+// depuis la première recette, et lui anime.
+function showCover() {
+  remplirCouverture();
+  return arriverA(-1);
 }
 
 // Les portes d'entrée du menu. Chacune restreint le livre puis ouvre la première
@@ -252,7 +263,7 @@ function appliquerFiltre(valeur) {
     b.classList.toggle('active', actif);
     b.setAttribute('aria-pressed', String(actif));
   });
-  filteredRecipes = applyFilterLogic();
+  majFilteredRecipes();
   buildTOC();
 }
 
@@ -350,11 +361,18 @@ function openFromGallery(i) {
 // 17 recettes sur 122 n'ont aucun nombre de personnes en base : faute de point de
 // départ, celles-là gardent les multiplicateurs.
 
-let baseServings = null;     // le nombre inscrit sur la recette
-let currentServings = null;  // celui choisi par le lecteur
+// L'état vit dans la page, plus dans deux variables globales. Depuis que le livre
+// tourne ses feuillets pour de vrai, la double courante n'est plus seule montée :
+// ses voisines sont préparées d'avance pour qu'une page qui arrive ne soit jamais
+// vide. Un compteur global aurait fait bouger les quantités de la mauvaise
+// recette, et le dernier rendu aurait écrasé le réglage en cours.
+//
+// Le point de départ (data-base) et le choix du lecteur (data-actuel) sont donc
+// portés par le bloc lui-même, et tout part du bouton cliqué.
 
-function appliquerEchelle(mult) {
-  document.querySelectorAll('#pageLeft .ingr-qty[data-base]').forEach(el => {
+function appliquerEchelle(bloc, mult) {
+  const page = bloc.closest('.page') || document;
+  page.querySelectorAll('.ingr-qty[data-base]').forEach(el => {
     const base = parseFloat(el.dataset.base);
     const unit = el.dataset.unit || '';
     if (isNaN(base)) return;
@@ -365,26 +383,32 @@ function appliquerEchelle(mult) {
   });
 }
 
-function majCompteurPersonnes() {
-  const compteur = document.getElementById('servingCount');
-  const reset = document.getElementById('servingReset');
-  const moins = document.getElementById('servingMinus');
-  if (!compteur) return;
-  compteur.textContent = currentServings;
-  if (reset) reset.hidden = (currentServings === baseServings);
-  if (moins) moins.disabled = (currentServings <= 1);
-  appliquerEchelle(currentServings / baseServings);
+function majCompteurPersonnes(bloc) {
+  const base = parseFloat(bloc.dataset.base);
+  const actuel = parseFloat(bloc.dataset.actuel);
+  const compteur = bloc.querySelector('.serving-count');
+  if (!compteur || !base) return;
+  compteur.textContent = actuel;
+  const reset = bloc.querySelector('.serving-reset');
+  const moins = bloc.querySelector('.serving-moins');
+  if (reset) reset.hidden = (actuel === base);
+  if (moins) moins.disabled = (actuel <= 1);
+  appliquerEchelle(bloc, actuel / base);
 }
 
-function stepServings(d) {
-  if (!baseServings) return;
-  currentServings = Math.max(1, Math.min(60, currentServings + d));
-  majCompteurPersonnes();
+function stepServings(d, btn) {
+  const bloc = btn.closest('.serving-scaler');
+  const base = parseFloat(bloc?.dataset.base);
+  if (!base) return;
+  bloc.dataset.actuel = String(Math.max(1, Math.min(60, parseFloat(bloc.dataset.actuel) + d)));
+  majCompteurPersonnes(bloc);
 }
 
-function resetServings() {
-  currentServings = baseServings;
-  majCompteurPersonnes();
+function resetServings(btn) {
+  const bloc = btn.closest('.serving-scaler');
+  if (!bloc) return;
+  bloc.dataset.actuel = bloc.dataset.base;
+  majCompteurPersonnes(bloc);
 }
 
 // Repli pour les recettes sans nombre de personnes.
@@ -392,7 +416,7 @@ function scaleIngredients(mult, btn) {
   const scaler = btn.closest('.serving-scaler');
   scaler.querySelectorAll('.serving-btn').forEach(b => b.classList.remove('serving-btn--active'));
   btn.classList.add('serving-btn--active');
-  appliquerEchelle(mult);
+  appliquerEchelle(scaler, mult);
 }
 
 // ── VARIANTES EN TUILES ───────────────────────────────────────────────────────
@@ -404,8 +428,10 @@ function scaleIngredients(mult, btn) {
 // Tout est déjà dans le DOM : ouvrir ne redemande rien à la base, et la CSS fait
 // la transition de taille. Aucune mesure, aucun calcul de hauteur.
 
-function ouvrirTuile(n) {
-  const grille = document.querySelector('#pageLeft .variantes-tuiles');
+function ouvrirTuile(n, btn) {
+  // La grille se trouve depuis le bouton cliqué : plusieurs pages de variantes
+  // peuvent être montées à la fois dans le livre.
+  const grille = btn?.closest('.variantes-tuiles');
   if (!grille) return;
   const tuiles = [...grille.querySelectorAll('.variante-tuile')];
   const cible = tuiles[n];
@@ -515,7 +541,7 @@ async function renderLeft(recipe) {
         const propres = etapesDeVariante.get(g) || [];
         return `
         <section class="variante-tuile">
-          <button class="variante-tete" onclick="ouvrirTuile(${n})" aria-expanded="false">
+          <button class="variante-tete" onclick="ouvrirTuile(${n}, this)" aria-expanded="false">
             <span class="variante-titre">${g}</span>
             <span class="variante-compte">${lignes.length} ingrédient${lignes.length > 1 ? 's' : ''}</span>
           </button>
@@ -563,19 +589,20 @@ async function renderLeft(recipe) {
 
   const source = provenance(recipe);
 
-  // Le nombre de personnes pilote l'échelle quand il existe.
-  baseServings = recipe.servings || null;
-  currentServings = baseServings;
+  // Le nombre de personnes pilote l'échelle quand il existe. Le point de départ et
+  // le choix du lecteur sont écrits sur le bloc : chaque page porte le sien.
+  const personnes = recipe.servings || null;
   const unite = recipe.servings_unit || 'personnes';
-  const servingsHTML = baseServings
+  const servingsHTML = personnes
     ? `
-    <div class="serving-scaler serving-people" role="group" aria-label="Ajuster le nombre de personnes">
+    <div class="serving-scaler serving-people" role="group" aria-label="Ajuster le nombre de personnes"
+         data-base="${personnes}" data-actuel="${personnes}">
       <span class="serving-word">Pour</span>
-      <button class="serving-step" id="servingMinus" onclick="stepServings(-1)" aria-label="Une personne de moins">−</button>
-      <span class="serving-count" id="servingCount" aria-live="polite">${baseServings}</span>
-      <button class="serving-step" onclick="stepServings(1)" aria-label="Une personne de plus">+</button>
+      <button class="serving-step serving-moins" onclick="stepServings(-1, this)" aria-label="Une personne de moins">−</button>
+      <span class="serving-count" aria-live="polite">${personnes}</span>
+      <button class="serving-step" onclick="stepServings(1, this)" aria-label="Une personne de plus">+</button>
       <span class="serving-word">${unite}</span>
-      <button class="serving-reset" id="servingReset" onclick="resetServings()" hidden>revenir à ${baseServings}</button>
+      <button class="serving-reset" onclick="resetServings(this)" hidden>revenir à ${personnes}</button>
     </div>`
     : `
     <div class="serving-scaler" role="group" aria-label="Ajuster les portions">
@@ -672,8 +699,8 @@ function renderRight(recipe, docs, surLeFeuillet) {
         <span class="tech">${ko}</span>
       </span>
       <span class="photo-inner">
-        <canvas id="pdf-thumb"></canvas>
-        <div id="pdf-fallback"><span style="font-size:26px">📄</span><span>Recette manuscrite</span></div>
+        <canvas class="pdf-thumb"></canvas>
+        <div class="pdf-fallback"><span style="font-size:26px">📄</span><span>Recette manuscrite</span></div>
       </span>
       <span class="bandeau-bas">
         <span class="main">${source}</span>
@@ -725,18 +752,23 @@ async function renderGardeFond() {
     const pdf = await pdfjsLib.getDocument({ url }).promise;
     const page = await pdf.getPage(1);
     const cadre = c.parentElement;
-    const l = cadre.clientWidth, h = cadre.clientHeight;
-    if (!l || !h) return;
+    // Même précaution que pour les manuscrits : la page de garde peut encore être
+    // hors du flux quand on arrive ici, et un fond dessiné à l'échelle zéro est
+    // invisible pour toujours.
+    quandMesurable(cadre, async () => {
+      const l = cadre.clientWidth, h = cadre.clientHeight;
+      if (!l || !h) return;
 
-    // On couvre le cadre : on prend la plus grande des deux échelles, quitte à
-    // déborder, plutôt que de laisser des bandes vides.
-    const vp1 = page.getViewport({ scale: 1 });
-    const echelle = Math.max(l / vp1.width, h / vp1.height);
-    const vp = page.getViewport({ scale: echelle });
-    c.width = Math.ceil(vp.width);
-    c.height = Math.ceil(vp.height);
-    await page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
-    c.classList.add('garde-fond--pret');
+      // On couvre le cadre : on prend la plus grande des deux échelles, quitte à
+      // déborder, plutôt que de laisser des bandes vides.
+      const vp1 = page.getViewport({ scale: 1 });
+      const echelle = Math.max(l / vp1.width, h / vp1.height);
+      const vp = page.getViewport({ scale: echelle });
+      c.width = Math.ceil(vp.width);
+      c.height = Math.ceil(vp.height);
+      await page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
+      c.classList.add('garde-fond--pret');
+    });
   } catch (err) {
     // Sans fond, la couverture reste parfaitement lisible : le voile et le
     // papier crème suffisent. On ne casse rien.
@@ -744,25 +776,44 @@ async function renderGardeFond() {
   }
 }
 
-function renderPDF(url) {
-  if (!window.pdfjsLib) return;
+// Attendre qu'un élément ait une largeur avant de le mesurer. Les feuillets sont
+// remplis AVANT que la page bouge — c'est ce qui évite qu'une page arrive vide en
+// pleine animation — mais à cet instant page-flip garde encore les pages non
+// visibles hors du flux : clientWidth vaut 0, et un manuscrit dessiné à cette
+// échelle-là est un rectangle blanc.
+function quandMesurable(el, faire) {
+  if (el.clientWidth > 0) return faire();
+  const obs = new ResizeObserver(() => {
+    if (el.clientWidth > 0) { obs.disconnect(); faire(); }
+  });
+  obs.observe(el);
+  // Filet : on n'observe pas un élément indéfiniment s'il n'apparaît jamais.
+  setTimeout(() => obs.disconnect(), 15000);
+}
+
+// La page à dessiner est passée en argument : plusieurs manuscrits sont montés en
+// même temps depuis que les feuillets voisins sont préparés d'avance, et un
+// getElementById aurait dessiné la recette d'à côté.
+function renderPDF(url, racine) {
+  if (!window.pdfjsLib || !racine) return;
   pdfjsLib.getDocument({ url }).promise
     .then(pdf => pdf.getPage(1))
     .then(page => {
-      const c = document.getElementById('pdf-thumb');
+      const c = racine.querySelector('.pdf-thumb');
       if (!c) return;
       const container = c.closest('.photo-inner');
-      const availW = container.clientWidth - 8;
-      const naturalVp = page.getViewport({ scale: 1 });
-      const scale = availW / naturalVp.width;
-      const vp = page.getViewport({ scale });
-      c.width = vp.width;
-      c.height = vp.height;
-      return page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
+      quandMesurable(container, () => {
+        const availW = container.clientWidth - 8;
+        const naturalVp = page.getViewport({ scale: 1 });
+        const vp = page.getViewport({ scale: availW / naturalVp.width });
+        c.width = vp.width;
+        c.height = vp.height;
+        page.render({ canvasContext: c.getContext('2d'), viewport: vp });
+      });
     })
     .catch(() => {
-      const fb = document.getElementById('pdf-fallback');
-      const th = document.getElementById('pdf-thumb');
+      const fb = racine.querySelector('.pdf-fallback');
+      const th = racine.querySelector('.pdf-thumb');
       if (fb) fb.style.display = 'flex';
       if (th) th.style.display = 'none';
     });
@@ -850,93 +901,237 @@ async function compressImage(file, maxWidth = 1200, quality = 0.82) {
 
 // ── NAVIGATION ────────────────────────────────────────────────────────────────
 
-function preloadAdjacent(idx) {
-  [-1, 1].forEach(offset => {
-    const r = filteredRecipes[idx + offset];
-    if (!r) return;
+// ── LE LIVRE ─────────────────────────────────────────────────────────────────
+//
+// Le tournage de page appartient à page-flip (voir vendor/README.md) : c'est lui
+// qui plie la feuille, dessine son ombre et la pose de l'autre côté. Deux
+// versions maison ont échoué avant, parce qu'une demi-page rigide qui pivote sur
+// une charnière ne ressemble pas à une page de livre, quel que soit l'angle.
+//
+// Ce qui suit ne fait que le lien entre ses feuillets et nos recettes :
+//
+//   feuillet 0 → la page de garde        feuillet 1 → le menu
+//   feuillet 2 + 2i → recette i, texte   feuillet 3 + 2i → recette i, manuscrit
+//
+// Une recette occupe donc une double page, et un seul tour de feuille passe d'une
+// recette entière à la suivante — exactement la lecture qu'on avait déjà.
+//
+// En dessous de cette largeur, pas de flipbook du tout : un feuillet a une hauteur
+// fixe, ce qui rognerait les recettes sur un téléphone. Le livre reprend alors les
+// deux pages empilées et la lecture au défilement (voir styles.css, le mode sans
+// data-flip).
+const LARGEUR_LIVRE_OUVERT = 900;
+
+let livreFlip = null;        // instance page-flip, ou null en lecture empilée
+let feuillets = [];          // les éléments de page, dans l'ordre du livre
+let enTrainDeTourner = false;
+let arriveeEnCours = false;  // une double est en train d'être posée sur le papier
+let livrePerime = true;      // la liste des recettes a changé : il faut remonter
+
+// Un seul endroit pour dire « la liste des recettes affichées vient de changer ».
+// Le nombre de feuillets en dépend, donc le livre doit être refabriqué.
+function majFilteredRecipes() {
+  filteredRecipes = applyFilterLogic();
+  livrePerime = true;
+}
+
+function pageDuSpread(idx) { return idx < 0 ? 0 : 2 + idx * 2; }
+function pagesDe(idx) {
+  const n = pageDuSpread(idx);
+  return { gauche: feuillets[n], droite: feuillets[n + 1] };
+}
+
+// La durée reste un choix de design : elle vit dans le token, on la lui passe.
+function dureeTourne() {
+  const brut = getComputedStyle(document.documentElement)
+    .getPropertyValue('--tourne-duration').trim();
+  const n = parseFloat(brut);
+  const ms = !n ? 720 : (brut.endsWith('ms') ? n : n * 1000);
+  // La règle CSS globale sur prefers-reduced-motion ne peut rien contre une
+  // animation dessinée en JavaScript : c'est donc ici qu'on écoute le réglage.
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 1 : ms;
+}
+
+// page-flip emporte notre conteneur avec lui quand on le démonte : son destroy()
+// finit par un block.remove() sur l'élément qu'on lui avait confié. Sans ça, le
+// premier retour au menu après un filtre laissait un livre sans page et une
+// erreur « Cannot set properties of null ». On le refabrique donc à l'identique.
+function conteneurLivre() {
+  const existant = document.getElementById('flipbook');
+  if (existant) return existant;
+  const livre = document.createElement('div');
+  livre.id = 'flipbook';
+  livre.className = 'book';
+  livre.setAttribute('role', 'region');
+  livre.setAttribute('aria-label', 'Pages du livre');
+  document.querySelector('.book-cadre').prepend(livre);
+  return livre;
+}
+
+function construireFeuillets() {
+  const livre = conteneurLivre();
+  livre.innerHTML = '';
+  feuillets = [];
+  const ajoute = (balise, classe, aria) => {
+    const el = document.createElement(balise);
+    el.className = 'page ' + classe;
+    el.setAttribute('aria-label', aria);
+    livre.appendChild(el);
+    feuillets.push(el);
+  };
+  ajoute('article', 'page-left', 'Page de garde');
+  ajoute('aside', 'page-right', 'Sommaire du livre');
+  filteredRecipes.forEach(r => {
+    ajoute('article', 'page-left', `Recette : ${r.title}`);
+    ajoute('aside', 'page-right', 'Manuscrit et détails de la recette');
+  });
+}
+
+// Fabrique le livre puis va au bon endroit. Appelé au démarrage et chaque fois
+// qu'un filtre change le nombre de recettes.
+async function monterLivre(idx) {
+  if (livreFlip) {
+    try { livreFlip.destroy(); } catch { /* déjà démonté, rien à faire */ }
+    livreFlip = null;
+  }
+  construireFeuillets();          // refabrique le conteneur si destroy l'a emporté
+  const livre = conteneurLivre();
+  remplirCouverture();
+
+  if (window.innerWidth < LARGEUR_LIVRE_OUVERT || !window.St?.PageFlip) {
+    livre.removeAttribute('data-flip');
+    return arriverA(idx, { animer: false });
+  }
+
+  livreFlip = new St.PageFlip(livre, {
+    width: 600, height: 860,          // proportions de départ, corrigées par size
+    size: 'stretch',
+    minWidth: 320, maxWidth: 700, minHeight: 420, maxHeight: 1500,
+    maxShadowOpacity: 0.4,
+    flippingTime: dureeTourne(),
+    showCover: false,
+    // Jamais une page à la fois : sous LARGEUR_LIVRE_OUVERT on n'arrive pas ici.
+    usePortrait: false,
+    mobileScrollSupport: false,
+    // Un clic sur la page ne doit pas la tourner : elle est pleine de boutons, de
+    // liens et de tuiles. On garde en revanche l'attrapage du coin à la souris.
+    disableFlipByClick: true,
+    clickEventForward: ['a', 'button', 'input', 'label', 'canvas', 'summary'],
+  });
+  livreFlip.loadFromHTML(feuillets);
+  livre.dataset.flip = 'on';
+
+  // On écoute la bibliothèque au lieu de tenir un compteur en double : elle sait
+  // où on est, y compris quand le lecteur attrape un coin de page à la souris.
+  livreFlip.on('flip', e => surArrivee(Math.floor(e.data / 2) - 1));
+  livreFlip.on('changeState', e => { enTrainDeTourner = e.data === 'flipping'; });
+
+  return arriverA(idx, { animer: false });
+}
+
+// Le contenu est posé AVANT que la feuille bouge : une page qui arrive vide
+// pendant l'animation ruinerait tout l'effet.
+async function remplirSpread(idx, force = false) {
+  if (idx < 0) return remplirCouverture();
+  const r = filteredRecipes[idx];
+  const { gauche, droite } = pagesDe(idx);
+  if (!r || !gauche || !droite) return;
+  if (!force && gauche.dataset.recette === String(r.id)) return;
+
+  gauche.dataset.recette = String(r.id);
+  droite.dataset.recette = String(r.id);
+  gauche.innerHTML = `<div class="loading-state">…</div>`;
+  droite.innerHTML = `<div class="loading-state"></div>`;
+  try {
+    const [lHTML, docs] = await Promise.all([renderLeft(r), loadDocuments(r.id)]);
+    const surLeFeuillet = await recettesDuFeuillet(docs, r.id);
+    gauche.innerHTML = lHTML;
+    droite.innerHTML = renderRight(r, docs, surLeFeuillet);
+    const manuscrit = docs.find(d => d.recipe_documents?.kind === 'manuscript')?.recipe_documents;
+    if (manuscrit) renderPDF(manuscrit.public_url, droite);
+  } catch (err) {
+    console.error('Erreur chargement recette :', err);
+    gauche.innerHTML = `<div class="loading-state">Impossible de charger la recette.</div>`;
+    droite.innerHTML = `<div class="loading-state"></div>`;
+    delete gauche.dataset.recette;   // pour réessayer au prochain passage
+    delete droite.dataset.recette;
+  }
+}
+
+// Les doubles d'à côté sont montées d'avance : le lecteur peut attraper un coin
+// de page à tout moment, et il ne doit jamais tomber sur du papier blanc.
+function preparerVoisines(idx) {
+  [idx - 1, idx + 1].forEach(v => {
+    if (v < 0 || v >= filteredRecipes.length) return;
+    remplirSpread(v).catch(() => {});
+    const r = filteredRecipes[v];
     sb(`recipe_ingredients?select=*,ingredients(name)&recipe_id=eq.${r.id}&order=display_order`).catch(() => {});
     sb(`recipe_steps?select=*&recipe_id=eq.${r.id}&order=step_number`).catch(() => {});
   });
 }
 
-async function showPage(idx) {
+// Sans page-flip, c'est une classe qui décide de la double visible.
+function marquerCourante(idx) {
+  const n = pageDuSpread(idx);
+  feuillets.forEach((el, i) => el.classList.toggle('page--courante', i === n || i === n + 1));
+}
+
+// Tout ce qui suit une arrivée, quelle qu'en soit la cause : nos flèches, le
+// clavier, le sommaire, ou un coin de page attrapé à la souris.
+function surArrivee(idx) {
   currentIndex = idx;
   const r = filteredRecipes[idx];
-  if (!r) return;
-
   // Le slug plutôt que l'identifiant : un lien envoyé par message devient
   // lisible (#choucroute-denise au lieu de #9).
-  history.replaceState(null, '', '#' + (r.slug || r.id));
-
-  document.getElementById('pageLeft').innerHTML = `<div class="loading-state">\u2026</div>`;
-  document.getElementById('pageRight').innerHTML = `<div class="loading-state"></div>`;
-
-  try {
-    const [lHTML, docs] = await Promise.all([renderLeft(r), loadDocuments(r.id)]);
-    const surLeFeuillet = await recettesDuFeuillet(docs, r.id);
-    document.getElementById('pageLeft').innerHTML = lHTML;
-    document.getElementById('pageRight').innerHTML = renderRight(r, docs, surLeFeuillet);
-    const manuscrit = docs.find(d => d.recipe_documents?.kind === 'manuscript')?.recipe_documents;
-    if (manuscrit) renderPDF(manuscrit.public_url);
-  } catch (err) {
-    console.error('Erreur chargement recette :', err);
-    document.getElementById('pageLeft').innerHTML = `<div class="loading-state">Impossible de charger la recette.</div>`;
-    document.getElementById('pageRight').innerHTML = `<div class="loading-state"></div>`;
-  }
+  if (idx < 0) history.replaceState(null, '', location.pathname);
+  else if (r) history.replaceState(null, '', '#' + (r.slug || r.id));
+  if (!livreFlip) marquerCourante(idx);
   updateControls();
-  preloadAdjacent(idx);
+  if (idx < 0) renderGardeFond();
+  preparerVoisines(idx);
 }
 
-// La durée est lue dans le token, pas recopiée : elle était en dur à trois
-// endroits du JS et une quatrième fois dans la CSS. Le moindre écart laissait la
-// page figée de profil le temps du décalage avant que le contenu ne change.
-const DUREE_TOURNE_MS = (() => {
-  const brut = getComputedStyle(document.documentElement)
-    .getPropertyValue('--tourne-duration').trim();
-  const n = parseFloat(brut);
-  if (!n) return 720;                              // tokens.css absent : repli
-  return brut.endsWith('ms') ? n : n * 1000;       // accepte 720ms comme 0.72s
-})();
-
-// Avancer tourne la page de DROITE vers la gauche, reculer tourne celle de
-// GAUCHE vers la droite : c'est le geste réel sur un livre. Une seule table pour
-// les trois cas, l'ancien code choisissait à l'envers dans deux d'entre eux.
-function pageQuiTourne(dir) {
-  return dir > 0
-    ? { element: document.getElementById('pfcRight'), classe: 'flipping-fwd' }
-    : { element: document.getElementById('pfcLeft'),  classe: 'flipping-back' };
-}
-
-function tournerPage(dir, ensuite) {
-  const { element, classe } = pageQuiTourne(dir);
-  if (!element) { ensuite(); return; }
-  isAnimating = true;
-  element.classList.add(classe);
-  setTimeout(async () => {
-    element.classList.remove(classe);
-    await ensuite();
-    isAnimating = false;
-  }, DUREE_TOURNE_MS);
-}
-
-async function changePage(dir) {
-  if (isAnimating) return;
-
-  // Ouvrir le livre depuis la couverture : c'est bien la page de droite (le menu)
-  // qui se tourne, comme pour n'importe quelle page suivante.
-  if (currentIndex === -1 && dir === 1) {
-    if (!filteredRecipes.length) return;
-    return tournerPage(1, () => showPage(0));
+async function arriverA(idx, { animer = false, force = false } = {}) {
+  if (livrePerime) { livrePerime = false; return monterLivre(idx); }
+  // Le contenu est chargé depuis le réseau : sans ce verrou, deux clics rapprochés
+  // lanceraient deux arrivées, et la seconde tournerait la page avant que la
+  // première ait fini d'écrire dessus.
+  if (arriveeEnCours) return;
+  arriveeEnCours = true;
+  try {
+    await remplirSpread(idx, force);
+    if (livreFlip) {
+      const n = pageDuSpread(idx);
+      if (animer) livreFlip.flip(n); else livreFlip.turnToPage(n);
+    }
+    surArrivee(idx);
+  } finally {
+    arriveeEnCours = false;
   }
+}
 
-  // Revenir à la couverture : la page de gauche se rabat vers la droite.
-  if (currentIndex === 0 && dir === -1) {
-    return tournerPage(-1, () => showCover());
-  }
+// Franchir la largeur charnière change de mode de lecture : au-dessus le livre se
+// feuillette, en dessous il se déroule. On remonte alors, sans quoi on resterait
+// avec des feuillets à hauteur fixe sur un écran étroit — ou l'inverse.
+window.matchMedia(`(min-width: ${LARGEUR_LIVRE_OUVERT}px)`).addEventListener('change', () => {
+  if (!feuillets.length) return;
+  monterLivre(currentIndex);
+});
 
-  const next = currentIndex + dir;
-  if (next < 0 || next >= filteredRecipes.length) return;
-  tournerPage(dir, () => showPage(next));
+// Le nom d'avant, gardé : une quinzaine d'endroits l'appellent pour sauter à une
+// recette (sommaire, recherche, hasard, favoris). Un saut ne s'anime pas — on ne
+// va pas tourner soixante feuilles pour aller de la première à la dernière.
+function showPage(idx, options) { return arriverA(idx, options); }
+
+// Feuilleter d'une double à la suivante. La couverture est la double -1 : ouvrir
+// le livre et revenir au menu sont donc le même geste que tourner une page, et
+// il n'y a plus de cas particulier à écrire.
+function changePage(dir) {
+  if (enTrainDeTourner) return;
+  const suivant = currentIndex + dir;
+  if (suivant < -1 || suivant >= filteredRecipes.length) return;
+  if (suivant < 0) remplirCouverture();   // le menu compte les favoris : on le refait
+  return arriverA(suivant, { animer: true });
 }
 
 function updateControls() {
@@ -961,7 +1156,7 @@ function applyFilterLogic() {
 }
 
 function applyFilter() {
-  filteredRecipes = applyFilterLogic();
+  majFilteredRecipes();
   currentIndex = -1;
   if (document.body.classList.contains('gallery-mode')) {
     showGallery();
@@ -1062,7 +1257,7 @@ function goToResult(indexGlobal) {
       b.classList.toggle('active', actif);
       b.setAttribute('aria-pressed', String(actif));
     });
-    filteredRecipes = applyFilterLogic();
+    majFilteredRecipes();
     buildTOC();
     idx = filteredRecipes.findIndex(x => x.id === r.id);
   }
@@ -2271,7 +2466,7 @@ async function rechargerLivre(idCible) {
     // être refaits, sinon le nouveau chapitre affiche encore l'ancien total.
     catFilter = 0;
     construireFiltres(CATS_LISTE);
-    filteredRecipes = applyFilterLogic();
+    majFilteredRecipes();
     buildTOC();
     const idx = filteredRecipes.findIndex(r => r.id === idCible);
     closeSubmit();
@@ -2477,6 +2672,7 @@ async function initAuth() {
 
     allRecipes = recipes;
     filteredRecipes = [...allRecipes];
+    livrePerime = true;
 
     // Après l'affectation, pas avant : construireFiltres compte les recettes de
     // chaque catégorie et aurait affiché « Toutes 0 ».
@@ -2520,6 +2716,8 @@ async function initAuth() {
     showCover();
   } catch (err) {
     console.error('Erreur chargement initial :', err);
-    document.getElementById('pageLeft').innerHTML = `<div class="loading-state">Impossible de charger les recettes.<br>Vérifie ta connexion et ton config.js.</div>`;
+    // Le livre n'a même pas pu être fabriqué : on écrit dans son conteneur, qui
+    // existe toujours, plutôt que dans un feuillet qui n'a jamais été créé.
+    document.getElementById('flipbook').innerHTML = `<div class="loading-state">Impossible de charger les recettes.<br>Vérifie ta connexion et ton config.js.</div>`;
   }
 })();

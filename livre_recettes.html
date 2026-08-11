@@ -23,21 +23,15 @@
 </header>
 
 <main class="stage" aria-label="Livre de recettes">
+  <!-- Les feuillets sont fabriqués par app.js : leur nombre dépend des recettes
+       affichées, et il change quand on applique un filtre. La reliure est hors du
+       livre, car page-flip remplace tout ce qu'il trouve à l'intérieur. -->
   <div class="book-outer">
-    <div class="book" role="region" aria-label="Pages du livre">
-      <div class="spine" aria-hidden="true"></div>
-      <div class="book-pages">
-        <div class="page-flip-container pfc-left" id="pfcLeft">
-          <article class="page-left" id="pageLeft" aria-label="Recette">
-            <div class="loading-state">Chargement…</div>
-          </article>
-        </div>
-        <div class="page-flip-container pfc-right" id="pfcRight">
-          <aside class="page-right" id="pageRight" aria-label="Détails et statistiques">
-            <div class="loading-state"></div>
-          </aside>
-        </div>
+    <div class="book-cadre">
+      <div class="book" id="flipbook" role="region" aria-label="Pages du livre">
+        <div class="loading-state">Chargement…</div>
       </div>
+      <div class="spine" aria-hidden="true"></div>
     </div>
   </div>
 </main>
@@ -123,6 +117,10 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.js"></script>
+<!-- Le tournage de page. Figé dans le dépôt plutôt que chargé d'un CDN : le livre
+     doit s'ouvrir même si un CDN tombe, et une version qui bouge toute seule sous
+     le livre est un risque qu'on ne prend pas. Voir vendor/README.md. -->
+<script src="vendor/page-flip.browser.js"></script>
 <script src="config.js"></script>
 <script src="app.js"></script>
 </body>

@@ -311,6 +311,7 @@
   --variante-duration: var(--primitive-duration-tuile);
   --variante-easing: var(--primitive-easing-tuile);
   --tourne-duration: var(--primitive-duration-tourne);
-  --tourne-easing: var(--primitive-easing-sortie);
-  --tourne-angle: 88deg;
+  /* L'angle et la courbe appartenaient à l'animation maison, remplacée par
+     page-flip qui calcule lui-même la flexion de la feuille. Seule la durée
+     reste un choix de design : app.js la lit ici et la passe à la bibliothèque. */
 }
