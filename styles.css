@@ -1496,6 +1496,10 @@ body {
 
 /* ══ NAVIGATION ══════════════════════════════════════════════════════════ */
 
+/* Sur grand écran l'enveloppe disparaît et les flèches reprennent leur place de
+   pastilles sur les bords : deux repères discrets, sans texte. */
+.nav-duo { display: contents; }
+
 .nav-arrow {
   position: fixed; top: 50%; transform: translateY(-50%); z-index: 250;
   width: var(--primitive-size-touch-cta); height: var(--primitive-size-touch-cta);
@@ -1508,6 +1512,7 @@ body {
 .nav-arrow:disabled { opacity: 0.3; cursor: not-allowed; }
 .nav-prev { left: var(--spacing-inline); }
 .nav-next { right: var(--spacing-inline); }
+.nav-texte { display: none; }
 
 
 
@@ -1524,10 +1529,31 @@ body {
 
 @media (max-width: 900px) {
   body { padding-top: 0; }
-  .topbar { position: static; height: auto; flex-wrap: wrap; padding: var(--spacing-inline) var(--spacing-champ); }
-  .topbar-right { flex-wrap: wrap; width: 100%; }
+
+  /* ── La barre du haut ──
+     Elle prenait 173 px sur 844, soit un cinquième de l'écran, étalés sur trois
+     rangées : le titre, puis le compteur avec deux boutons, puis « Se connecter »
+     toute seule. Deux rangées franches valent mieux : le titre du livre, puis
+     tous les boutons sur une ligne qui glisse latéralement si elle ne tient pas.
+     Le compteur quitte la barre — il est déjà au bas de chaque page. */
+  .topbar {
+    position: static; height: auto; flex-wrap: wrap; align-items: flex-start;
+    padding: var(--spacing-inline) var(--spacing-champ);
+    gap: var(--spacing-inline);
+  }
+  .site-logo {
+    font-size: 1.15rem; white-space: normal; line-height: 1.15; flex: 1 1 100%;
+  }
+  .topbar-right {
+    width: 100%; flex-wrap: nowrap; gap: var(--spacing-inline);
+    overflow-x: auto; scrollbar-width: none;
+    /* Sans ça, un bouton coupé au bord ne se voit pas comme « il y en a d'autres ». */
+    padding-bottom: 2px;
+  }
+  .topbar-right::-webkit-scrollbar { display: none; }
+  .bar-btn { padding: 0 var(--spacing-inline); flex: 0 0 auto; }
+  .page-counter { display: none; }
   .search-input { width: 100%; }
-  .page-counter { text-align: left; }
 
   .stage { padding: 0; }
   /* Une seule colonne : la page de texte, puis le manuscrit dessous. Sur cette
@@ -1538,21 +1564,129 @@ body {
   .spine { display: none; }
   .page-left, .page-right { padding: var(--spacing-bloc) var(--spacing-champ) var(--spacing-section); }
   .page-left { padding-left: calc(var(--spacing-champ) + var(--tranche-width)); }
-  .page-right { min-height: 82vh; padding: 0; }
-  .page-num { left: calc(var(--spacing-champ) + var(--tranche-width)); }
+  .page-right { min-height: 0; padding: 0; }
+
+  /* ── Le pêle-mêle ──
+     Les vignettes sont placées en absolu, en pourcentages d'une page entière : un
+     assemblage de photos posées sur la table, qui vit très bien sur une page de
+     droite d'écran large. Sur téléphone, la page fait un tiers de cette largeur :
+     le manuscrit débordait par-dessus les étiquettes (« Végétarien », « Léger »)
+     et par-dessus le bouton Favori, qui devenaient illisibles et incliquables.
+     Ici, elles reprennent le fil : l'une sous l'autre, à leur taille. On garde la
+     légère inclinaison — c'est ce qui fait le papier posé, et elle ne gêne rien
+     quand plus rien ne se superpose. */
+  .pele-melee { position: static; inset: auto; display: grid; gap: var(--spacing-bloc); padding: var(--spacing-champ); }
+  .tuile { position: static; width: auto; height: auto; }
+  .tuile--manuscrit, .pele-melee--seul .tuile--manuscrit {
+    left: auto; top: auto; width: auto; height: auto;
+    aspect-ratio: 3 / 4;                       /* la proportion d'un feuillet */
+  }
+  .tuile--p1, .tuile--p2, .tuile--p3, .tuile--p4, .tuile--p5 {
+    left: auto; top: auto; width: auto; height: auto; aspect-ratio: 4 / 3;
+  }
+  .tuile--vide, .pele-melee--seul .tuile--vide {
+    left: auto; top: auto; width: auto; height: auto; min-height: 4rem;
+  }
+  /* Les numéros de page sont un usage du livre papier : ils désignent une position
+     dans une double page. Empilées et parcourues au défilement, ils n'ont plus rien
+     à désigner et tombaient n'importe où — le « 1 » par-dessus le cadre de la
+     dernière étape, le « 2 » à côté du bouton Favori. */
+  .page-num, .page-num-right { display: none; }
+
+  /* Le pied de la page manuscrit : les étiquettes prennent leur ligne entière, les
+     deux boutons la suivante. Sinon « Méditerranéen » venait frôler « Copier le
+     lien », les deux se touchant sur quelques pixels. */
+  .right-footer { flex-wrap: wrap; }
+  .tags-row { flex: 1 1 100%; }
+
+  /* Le grand numéro d'étape était centré sur l'ensemble « titre + texte », ce qui
+     le posait entre les deux quand l'étape a un titre et une durée : le « 02 »
+     arrivait à hauteur de « DÉGORGER » sans lui appartenir. Il s'aligne désormais
+     sur le début de l'étape, qui est ce qu'il numérote. */
+  .step-num { align-self: start; }
 
   .recipe-body { grid-template-columns: 1fr; gap: var(--spacing-bloc); }
-  .meta-row { gap: var(--spacing-champ) 0; }
 
-  .nav-arrow { position: static; transform: none; }
-  .nav-prev, .nav-next {
-    position: fixed; bottom: var(--spacing-bloc); top: auto; transform: none;
+  /* ── La page de garde devient un bandeau de titre ──
+     Elle occupait les 844 px du premier écran, et comme les deux pages sont
+     empilées le menu se trouvait DESSOUS, hors de vue : on ouvrait le livre sur un
+     écran sans rien à faire. Le titre reste — c'est l'identité du livre — mais il
+     se replie sur trois lignes, et « Par où commencer » apparaît juste après.
+     Le fond manuscrit et son voile s'en vont : à cette taille ce n'était plus une
+     texture, juste du gris. Sur grand écran, la garde garde sa page entière. */
+  .page--garde { min-height: 0; }
+  .page--garde .garde-frame { height: auto; min-height: 0; }
+  .page--garde .garde-fond, .page--garde .garde-voile, .page--garde .garde-page-num { display: none; }
+  .page--garde .garde-contenu {
+    position: static; padding: var(--spacing-champ) var(--spacing-champ) var(--spacing-bloc);
+    padding-left: calc(var(--spacing-champ) + var(--tranche-width));
   }
-  .nav-prev { left: var(--spacing-inline); }
-  .nav-next { right: var(--spacing-inline); }
+  .page--garde .garde-title { font-size: 1.9rem; margin-bottom: var(--spacing-inline); }
+  .page--garde .garde-dedication { font-size: var(--primitive-font-size-body); }
+
+  /* ── Le bloc des métadonnées ──
+     En flex il se cassait en 2×2 et les séparateurs droits devenaient orphelins :
+     une barre verticale flottait à droite de « facile », sans rien après. Une
+     grille de deux colonnes met le trait entre les colonnes, jamais au bord. */
+  .meta-row {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-champ) 0;
+  }
+  .meta-item { padding-right: var(--spacing-champ); margin-right: 0; }
+  .meta-item:nth-child(2n) { border-right: 0; padding-right: 0; }
+  .meta-item:nth-child(2n + 1) { border-right: var(--primitive-border-fin) solid var(--color-rule); }
+
+  /* La ligne pointillée de provenance filait jusqu'au bord de l'écran, où elle se
+     faisait trancher en plein motif. Elle s'arrête avant la marge. */
+  .recipe-meta-line { padding-right: var(--spacing-champ); }
+
+  /* ── Aller à la recette voisine ──
+     Les flèches étaient deux pastilles fixées au-dessus du texte : elles
+     mangeaient un morceau de chaque page (« 2 bra[nche] persil », « Servir
+     tiè[de] »). Elles deviennent deux boutons pleine largeur, dans le flux, à la
+     fin de la recette — on avance quand on a fini de lire, et plus rien n'est
+     masqué. Le nom de la recette d'à côté donne une raison d'y aller. */
+  .nav-duo {
+    display: flex; gap: var(--spacing-inline);
+    padding: var(--spacing-bloc) var(--spacing-champ) calc(var(--spacing-section) + env(safe-area-inset-bottom));
+    background: var(--color-desk);
+  }
+  .nav-arrow {
+    position: static; transform: none; width: auto; height: auto; flex: 1 1 0;
+    min-width: 0; min-height: var(--primitive-size-touch-cta);
+    display: flex; align-items: center; gap: var(--spacing-inline);
+    padding: var(--spacing-inline) var(--spacing-champ);
+    text-align: left; font-size: 1rem;
+  }
+  .nav-next { justify-content: flex-end; text-align: right; }
+  .nav-arrow:disabled { display: none; }   /* pas de bouton mort en fin de livre */
+  .nav-fleche { font-size: 1.4rem; line-height: 1; flex: 0 0 auto; }
+  .nav-texte { display: block; min-width: 0; }
+  .nav-sens {
+    display: block; font-size: var(--primitive-font-size-label-sm);
+    font-weight: var(--primitive-weight-bold); text-transform: uppercase;
+    letter-spacing: var(--primitive-tracking-label); color: var(--color-ink-faint);
+  }
+  .nav-titre {
+    font-family: var(--primitive-font-serif); font-size: 0.95rem;
+    line-height: 1.2; color: var(--color-ink);
+    /* Deux lignes au plus : certains titres font huit mots. */
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
 
   .right-footer { position: static; padding: var(--spacing-champ); }
   .toc-panel, .submit-panel { padding: var(--spacing-bloc) var(--spacing-champ); max-height: 92vh; }
+
+  /* Les filtres du sommaire tenaient chacun sur sa ligne mais en pastille ajustée
+     au texte : « Accompagnements & Légumes » passait à la ligne à l'intérieur et
+     repoussait son effectif sur le côté, détaché. Une rangée pleine largeur, le
+     nom à gauche et le compte à droite : même lecture pour les sept. */
+  #tocFilters { flex-direction: column; align-items: stretch; gap: 4px; }
+  #tocFilters .cat-btn {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: var(--spacing-champ); width: 100%; text-align: left;
+    min-height: var(--primitive-size-touch);
+  }
 }
 
 
