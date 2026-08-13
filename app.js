@@ -647,7 +647,14 @@ function renderRight(recipe, docs, surLeFeuillet) {
   // Un document ne remonte que par recipe_document_links, donc une page ne peut
   // afficher que SON manuscrit et SES photos, jamais celui d'une autre recette.
   // Les 4 feuillets partagés le sont entre deux variantes du même plat.
-  const manuscrit = (docs || []).find(d => d.recipe_documents?.kind === 'manuscript')?.recipe_documents;
+  // Un feuillet peut tenir sur PLUSIEURS pages, ou exister en deux versions — la
+  // recette des langoustines a la sienne pour 4 personnes et pour 10. La table des
+  // liens porte un page_label prévu pour ça depuis le début, que rien n'affichait :
+  // le pêle-mêle ne montre que le premier manuscrit, donc les suivants étaient
+  // stockés et invisibles. On les liste maintenant dans le pied de page.
+  const manuscrits = (docs || []).filter(d => d.recipe_documents?.kind === 'manuscript');
+  const manuscrit = manuscrits[0]?.recipe_documents;
+  const autresPages = manuscrits.slice(1);
   const photos = (docs || [])
     .filter(d => d.recipe_documents?.kind === 'dish_photo')
     .map(d => d.recipe_documents)
@@ -663,6 +670,8 @@ function renderRight(recipe, docs, surLeFeuillet) {
       <div class="tags-row">${tagsHTML}</div>
       <button class="copy-link-btn" onclick="copyRecipeLink(this)" title="Copier le lien vers cette recette" aria-label="Copier le lien vers cette recette">Copier le lien</button>
       <button class="${isFav ? 'fav-btn--active' : 'copy-link-btn'}" onclick="toggleFav(${recipe.id})" aria-label="${isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}">${isFav ? '★ Favori' : '☆ Favori'}</button>
+      ${autresPages.map((p, i) => `<a class="autre-page" href="${p.recipe_documents.public_url}" target="_blank" rel="noopener"
+         title="Ouvrir cette page du feuillet">${p.page_label || 'Page ' + (i + 2)}</a>`).join('')}
       <span class="page-num-right">${currentIndex * 2 + 2}</span>
     </div>`;
 

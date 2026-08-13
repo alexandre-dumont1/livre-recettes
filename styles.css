@@ -717,6 +717,19 @@ body {
   color: var(--color-ink-muted); background: var(--color-page);
   border: var(--primitive-border-fin) solid var(--color-rule); padding: 0.1rem 0.4rem;
 }
+/* Une autre page du même feuillet. Même gabarit que les boutons voisins, mais en
+   trait fin : c'est une porte vers un document, pas une action sur la recette. */
+.autre-page {
+  flex: 0 0 auto; text-decoration: none;
+  background: var(--color-page); color: var(--color-ink-muted);
+  border: var(--primitive-border-fin) solid var(--color-rule);
+  font-size: 0.72rem; font-weight: var(--primitive-weight-bold);
+  letter-spacing: var(--primitive-tracking-label); text-transform: uppercase;
+  min-height: var(--primitive-size-touch); padding: 0 var(--spacing-inline);
+  display: inline-flex; align-items: center;
+}
+.autre-page:hover { color: var(--color-ink); border-color: var(--color-ink); }
+
 .copy-link-btn, .fav-btn--active, .right-footer button {
   background: var(--color-page); cursor: pointer;
   border: var(--primitive-border-trait) solid var(--color-ink); color: var(--color-ink);
