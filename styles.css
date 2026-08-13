@@ -635,6 +635,11 @@ body {
 }
 .variantes-tuiles--ouverte .variante-tuile:not(.variante-tuile--ouverte) .variante-titre {
   font-size: var(--variante-titre-size-petit);
+  /* Deux lignes au plus. Les noms de salade tenaient sur une ou deux lignes, mais
+     « BÉABA — Noix de coco & fleur d'oranger » en prend cinq dans une tuile
+     réduite au quart : la rangée devenait haute et en dents de scie. Le nom de
+     code est au début, donc deux lignes suffisent à reconnaître la variante. */
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
 .variantes-tuiles--ouverte .variante-tuile:not(.variante-tuile--ouverte) .variante-compte {
   display: none;
