@@ -940,30 +940,31 @@ body {
 
 /* ══ SURCOUCHES : TDM ET SOUMISSION ══════════════════════════════════════ */
 
-.toc-overlay, .submit-overlay {
+.toc-overlay, .submit-overlay, .membres-overlay {
   position: fixed; inset: 0; z-index: 400; display: none;
   background: rgba(20, 18, 14, 0.55); backdrop-filter: blur(3px);
   align-items: center; justify-content: center; padding: var(--spacing-bloc);
 }
-.toc-overlay.open, .submit-overlay.open { display: flex; }
+.toc-overlay.open, .submit-overlay.open, .membres-overlay.open { display: flex; }
 
-.toc-panel, .submit-panel {
+.toc-panel, .submit-panel, .membres-panel {
   background: var(--color-page); width: 100%; max-width: 760px;
   max-height: 86vh; overflow-y: auto; padding: var(--spacing-section);
   border-top: 4px solid var(--color-accent-fill);
 }
 .submit-panel { max-width: 560px; }
+.membres-panel { max-width: 620px; }
 
-.toc-panel-header, .submit-panel-header {
+.toc-panel-header, .submit-panel-header, .membres-panel-header {
   display: flex; justify-content: space-between; align-items: flex-start;
   gap: var(--spacing-champ); margin-bottom: var(--spacing-bloc);
   border-bottom: var(--primitive-border-trait) solid var(--color-ink); padding-bottom: var(--spacing-inline);
 }
-.toc-panel-title, .submit-panel-title {
+.toc-panel-title, .submit-panel-title, .membres-panel-title {
   font-family: var(--primitive-font-marqueur); font-size: 1.8rem; line-height: 1.1;
 }
-.submit-panel-subtitle { font-size: var(--primitive-font-size-small); color: var(--color-ink-muted); }
-.toc-close, .submit-close {
+.submit-panel-subtitle, .membres-panel-subtitle { font-size: var(--primitive-font-size-small); color: var(--color-ink-muted); }
+.toc-close, .submit-close, .membres-close {
   background: none; border: var(--primitive-border-trait) solid var(--color-ink); cursor: pointer;
   font-family: inherit; font-size: 0.72rem; font-weight: var(--primitive-weight-bold);
   letter-spacing: var(--primitive-tracking-label); text-transform: uppercase;
@@ -1755,7 +1756,7 @@ body {
   }
 
   .right-footer { position: static; padding: var(--spacing-champ); }
-  .toc-panel, .submit-panel { padding: var(--spacing-bloc) var(--spacing-champ); max-height: 92vh; }
+  .toc-panel, .submit-panel, .membres-panel { padding: var(--spacing-bloc) var(--spacing-champ); max-height: 92vh; }
 
   /* Les filtres du sommaire tenaient chacun sur sa ligne mais en pastille ajustée
      au texte : « Accompagnements & Légumes » passait à la ligne à l'intérieur et
@@ -1785,4 +1786,75 @@ body {
   .step-item, .note-row, .ingr-row { break-inside: avoid; }
   .recipe-title { font-size: 32pt; }
   a { text-decoration: none; color: inherit; }
+}
+
+
+/* ══ QUI ENTRE DANS LE LIVRE ═════════════════════════════════════════════ */
+/* Le lien du livre se partage, donc n'importe qui peut se connecter en Google :
+   la fiche se crée en « en attente » et n'ouvre rien. Ce panneau est le seul
+   endroit où un administrateur approuve, sans passer par le SQL. Les demandes
+   en attente d'abord : c'est la seule raison de l'ouvrir. */
+
+.membres-groupe + .membres-groupe {
+  margin-top: var(--spacing-bloc); padding-top: var(--spacing-bloc);
+  border-top: var(--primitive-border-fin) solid var(--color-rule);
+}
+.membres-vide {
+  font-size: var(--primitive-font-size-small); color: var(--color-ink-muted); font-style: italic;
+}
+
+.membre { display: flex; align-items: center; gap: var(--spacing-champ); padding: var(--spacing-inline) 0; }
+.membre + .membre { border-top: var(--primitive-border-fin) solid var(--color-rule); }
+
+.membre-avatar {
+  width: 34px; height: 34px; flex: 0 0 34px; border-radius: 50%; object-fit: cover;
+  display: grid; place-items: center; background: var(--color-page-verso);
+  font-size: 0.85rem; font-weight: var(--primitive-weight-bold); color: var(--color-ink-muted);
+}
+.membre-qui { flex: 1; min-width: 0; }
+/* Les trois s'empilent : sur une seule ligne, le nom, l'adresse et la date se
+   lisaient comme une seule phrase. */
+.membre-nom, .membre-mail, .membre-quand { display: block; }
+.membre-nom { font-weight: var(--primitive-weight-bold); }
+/* L'adresse est le seul moyen de distinguer deux homonymes : on ne la coupe pas,
+   on la laisse revenir à la ligne. */
+.membre-mail { font-size: var(--primitive-font-size-small); color: var(--color-ink-muted); overflow-wrap: anywhere; }
+.membre-quand { font-size: var(--primitive-font-size-small); color: var(--color-ink-faint); }
+
+.membre-actions { display: flex; gap: var(--spacing-inline); flex-wrap: wrap; align-items: center; }
+.membre-btn {
+  background: none; border: var(--primitive-border-trait) solid var(--color-ink); cursor: pointer;
+  font-family: inherit; font-size: 0.72rem; font-weight: var(--primitive-weight-bold);
+  letter-spacing: var(--primitive-tracking-label); text-transform: uppercase;
+  min-height: var(--primitive-size-touch); padding: 0 var(--spacing-champ); white-space: nowrap;
+}
+.membre-btn--oui { background: var(--color-accent-fill); border-color: var(--color-accent-fill); color: var(--color-page); }
+.membre-btn--non { color: var(--color-ink-muted); }
+.membre-btn[disabled] { opacity: 0.45; cursor: default; }
+
+.membre-role {
+  font-size: 0.68rem; font-weight: var(--primitive-weight-bold);
+  letter-spacing: var(--primitive-tracking-caps); text-transform: uppercase;
+  color: var(--color-ink-muted); border: var(--primitive-border-fin) solid var(--color-rule);
+  padding: 2px 6px; white-space: nowrap;
+}
+.membre-moi { font-size: var(--primitive-font-size-small); color: var(--color-ink-faint); font-style: italic; }
+
+/* Le bouton d'entrée, dans la barre du haut, avec le nombre de demandes. */
+.auth-demandes {
+  background: none; border: var(--primitive-border-trait) solid var(--color-ink); cursor: pointer;
+  font-family: inherit; font-size: 0.72rem; font-weight: var(--primitive-weight-bold);
+  letter-spacing: var(--primitive-tracking-label); text-transform: uppercase;
+  min-height: var(--primitive-size-touch); padding: 0 var(--spacing-inline);
+  display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+}
+.auth-demandes-n {
+  background: var(--color-accent-fill); color: var(--color-page);
+  border-radius: 999px; padding: 0 6px; font-size: 0.68rem; min-width: 18px; text-align: center;
+}
+
+@media (max-width: 640px) {
+  .membre { flex-wrap: wrap; }
+  .membre-actions { width: 100%; }
+  .membre-btn { flex: 1; }
 }
