@@ -1858,3 +1858,65 @@ body {
   .membre-actions { width: 100%; }
   .membre-btn { flex: 1; }
 }
+
+/* ══ LA TABLE DES MATIÈRES ═══════════════════════════════════════════════ */
+/* Une vraie table de livre : le chapitre au marqueur, les recettes en deux
+   colonnes, les points de conduite qui mènent au numéro de page. */
+
+.tdm-page { display: flex; flex-direction: column; height: 100%; }
+
+/* La page de droite est d'ordinaire le panneau du manuscrit : elle n'a ni
+   rembourrage ni papier clair. La table en a besoin des deux. */
+.page-right.page--table {
+  background: var(--color-page);
+  padding: var(--spacing-page) var(--spacing-section) var(--spacing-section);
+}
+
+.tdm-titre {
+  font-family: var(--primitive-font-marqueur); font-size: 2.1rem; line-height: 1.05;
+  margin: 0 0 var(--spacing-bloc);
+  border-bottom: var(--primitive-border-trait) solid var(--color-ink);
+  padding-bottom: var(--spacing-inline);
+}
+
+/* Une seule colonne, pleine largeur. À deux colonnes (260 px), 40 % des titres
+   du livre passaient à la ligne et la table sortait de sa page.
+   `min-height: 0` est indispensable : sans lui, `flex: 1` laisse l'élément
+   grandir jusqu'à son contenu et la table débordait de 1100 px. */
+.tdm-liste { flex: 1; min-height: 0; }
+
+.tdm-chapitre {
+  font-family: var(--primitive-font-marqueur); font-size: 1.05rem; line-height: 1.2;
+  color: var(--color-accent-fill);
+  margin: var(--spacing-champ) 0 var(--spacing-inline);
+  /* Un titre de chapitre ne reste jamais seul en bas d'une colonne. */
+}
+.tdm-chapitre:first-child { margin-top: 0; }
+
+.tdm-ligne {
+  display: flex; align-items: baseline; gap: 6px; width: 100%;
+  background: none; border: 0; padding: 3px 0; cursor: pointer;
+  font: inherit; color: inherit; text-align: left;
+}
+.tdm-ligne:hover .tdm-nom, .tdm-ligne:focus-visible .tdm-nom { color: var(--color-accent-fill); }
+
+.tdm-nom { flex: 0 1 auto; }
+/* Les points de conduite : une bordure pointillée qui occupe le vide restant.
+   Décalée vers le bas pour tomber sous la ligne de base, pas au milieu du mot. */
+.tdm-points {
+  flex: 1 1 auto; min-width: 12px;
+  border-bottom: var(--primitive-border-fin) dotted var(--color-rule);
+  transform: translateY(-3px);
+}
+.tdm-numero { flex: 0 0 auto; font-variant-numeric: tabular-nums; color: var(--color-ink-muted); }
+
+/* Sur téléphone le livre se déroule : une seule colonne, sinon on lit en
+   zigzag sur 40 mm de large. */
+@media (max-width: 640px) {
+  .tdm-titre { font-size: 1.6rem; }
+}
+
+/* Le rappel de chapitre en tête d'une page qui ne commence pas par lui : plus
+   discret que le chapitre lui-même, il situe sans se faire passer pour un titre. */
+.tdm-suite { color: var(--color-ink-muted); }
+.tdm-suite span { font-family: var(--primitive-font-sans); font-size: 0.72rem; font-style: italic; letter-spacing: 0; }
