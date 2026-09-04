@@ -1026,7 +1026,16 @@ async function monterLivre(idx) {
   // On écoute la bibliothèque au lieu de tenir un compteur en double : elle sait
   // où on est, y compris quand le lecteur attrape un coin de page à la souris.
   livreFlip.on('flip', e => surArrivee(Math.floor(e.data / 2) - 1));
-  livreFlip.on('changeState', e => { enTrainDeTourner = e.data === 'flipping'; });
+  // Toute position autre que « read » veut dire qu'une feuille bouge : coin
+  // soulevé au survol, page attrapée à la souris, ou animation en cours. Pendant
+  // ce temps la page ne doit plus être une zone de défilement, sinon le navigateur
+  // fait apparaître ses barres de scroll sur la feuille qui se plie (voir
+  // styles.css, data-tourne).
+  livreFlip.on('changeState', e => {
+    enTrainDeTourner = e.data === 'flipping';
+    if (e.data === 'read') livre.removeAttribute('data-tourne');
+    else livre.dataset.tourne = 'oui';
+  });
 
   return arriverA(idx, { animer: false });
 }

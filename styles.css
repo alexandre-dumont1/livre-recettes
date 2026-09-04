@@ -190,9 +190,16 @@ body {
   background: var(--color-page);
   box-shadow: var(--primitive-shadow-livre);
   /* La contrepartie d'un vrai tournage : la page a une taille fixe. Une recette
-     plus longue défile donc dans sa page au lieu de faire grandir le livre. */
-  overflow-y: auto; overscroll-behavior: contain;
+     plus longue défile donc dans sa page au lieu de faire grandir le livre.
+     `overflow-x` est mis à hidden EXPLICITEMENT : laissé à `visible`, la règle CSS
+     le fait retomber en `auto` dès que l'autre axe défile, et la barre horizontale
+     apparaissait sur la feuille rétrécie par le pli. */
+  overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain;
 }
+/* Pendant qu'une feuille bouge (coin soulevé, page attrapée, animation), plus
+   aucune page n'est une zone de défilement : les barres de scroll clignotaient
+   sur la feuille en train de se plier. Le défilement revient dès la fin. */
+.book[data-flip="on"][data-tourne="oui"] .page { overflow: hidden; }
 
 /* La reliure : un pli discret, pas un dégradé théâtral. */
 .spine {
