@@ -201,6 +201,19 @@ body {
    sur la feuille en train de se plier. Le défilement revient dès la fin. */
 .book[data-flip="on"][data-tourne="oui"] .page { overflow: hidden; }
 
+/* LE défaut des barres de défilement, et le vrai. Pendant qu'une feuille tourne,
+   page-flip pose deux dégradés d'ombre (.stf__outerShadow, .stf__innerShadow) de
+   la taille du livre, mais PIVOTÉS : ils sortent alors très loin du cadre — mesuré
+   à 1115 px à droite au survol d'un coin, 717 px en pleine rotation, contre 0 au
+   repos. C'est le DOCUMENT qui grandit, donc ce sont les barres de la fenêtre qui
+   apparaissent et disparaissent à chaque mouvement.
+   On rogne donc au niveau du bloc de la bibliothèque. `clip` plutôt que `hidden` :
+   il ne crée pas de zone de défilement, donc il ne peut pas lui-même produire une
+   barre. `hidden` reste écrit avant, pour les navigateurs d'avant `clip`.
+   Vérifié en capture : ni le coin soulevé ni la feuille en pleine rotation ne sont
+   coupés — ils tiennent déjà dans le bloc, seules les ombres débordaient. */
+.book[data-flip="on"] .stf__block { overflow: hidden; overflow: clip; }
+
 /* La reliure : un pli discret, pas un dégradé théâtral. */
 .spine {
   position: absolute; top: 0; bottom: 0; left: 50%; width: 24px;
