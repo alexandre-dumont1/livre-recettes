@@ -2747,14 +2747,160 @@ function renderAuth() {
     etat = `<span class="auth-state auth-state--admin">${currentMember.role}</span>`;
   }
 
+  // Le bouton des demandes n'existe que pour un administrateur, et le nombre
+  // n'apparaît que s'il y a vraiment quelqu'un à approuver : un badge à zéro
+  // appellerait un clic pour rien.
+  const demandes = estAdmin()
+    ? `<button class="auth-demandes" onclick="openMembres()" title="Les demandes d'accès au livre">
+         Demandes${nbEnAttente ? `<span class="auth-demandes-n">${nbEnAttente}</span>` : ''}
+       </button>`
+    : '';
+
   zone.innerHTML = `
     <div class="auth-me">
       ${avatar}
       <span class="auth-name">${prenom}</span>
       ${etat}
+      ${demandes}
       <button class="auth-signout" onclick="signOut()" title="Se déconnecter" aria-label="Se déconnecter">⏏</button>
     </div>`;
 }
+
+// ── LES DEMANDES D'ACCÈS ──────────────────────────────────────────────────────
+// Tout le monde lit le livre sans compte. Se connecter en Google crée une fiche
+// « en attente » qui n'ouvre rien ; l'approbation donne le droit d'AJOUTER une
+// recette. Les policies font le vrai travail (« les admins voient toutes les
+// fiches », « les admins valident les demandes ») : ce panneau n'est qu'une main
+// posée dessus, pour ne pas ouvrir le SQL à chaque parent qui arrive.
+
+let membres = [];
+let nbEnAttente = 0;
+
+// Les noms et les adresses viennent des comptes Google de gens qui se sont
+// connectés : ils ne sont pas de nous, donc ils passent par echapper() avant
+// d'entrer dans la page.
+
+function estAdmin() {
+  return currentMember?.role === 'admin' && currentMember?.status === 'approved';
+}
+
+// Compter les demandes sans ouvrir le panneau : le badge doit être là dès l'arrivée.
+async function compterDemandes() {
+  if (!estAdmin()) { nbEnAttente = 0; return; }
+  const { count, error } = await sbClient
+    .from('family_members')
+    .select('email', { count: 'exact', head: true })
+    .eq('status', 'pending');
+  if (error) { console.error('Comptage des demandes :', error.message); return; }
+  nbEnAttente = count ?? 0;
+}
+
+const QUAND = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+
+function ligneMembre(m, actions) {
+  const initiale = (m.display_name || m.email || '?').trim()[0].toUpperCase();
+  const avatar = m.avatar_url
+    ? `<img class="membre-avatar" src="${echapper(m.avatar_url)}" alt="" referrerpolicy="no-referrer">`
+    : `<span class="membre-avatar">${echapper(initiale)}</span>`;
+  const date = m.requested_at ? QUAND.format(new Date(m.requested_at)) : '';
+  return `
+    <div class="membre">
+      ${avatar}
+      <span class="membre-qui">
+        <span class="membre-nom">${echapper(m.display_name || m.email)}</span>
+        <span class="membre-mail">${echapper(m.email)}</span>
+        ${date ? `<span class="membre-quand">arrivé le ${date}</span>` : ''}
+      </span>
+      <span class="membre-actions">${actions}</span>
+    </div>`;
+}
+
+function dessinerMembres() {
+  const corps = document.getElementById('membresCorps');
+  if (!corps) return;
+
+  // Le bouton porte l'INDICE de la fiche, pas son adresse : une apostrophe dans
+  // un attribut onclick casserait la chaîne JavaScript, et l'échappement HTML ne
+  // répare pas ça — il la restituerait justement telle quelle.
+  const bouton = (m, statut, classe, libelle) =>
+    `<button class="membre-btn ${classe}" onclick="changerStatutMembre(${membres.indexOf(m)}, '${statut}')">${libelle}</button>`;
+
+  const attente = membres.filter(m => m.status === 'pending');
+  const approuves = membres.filter(m => m.status === 'approved');
+  const refuses = membres.filter(m => m.status === 'rejected');
+  const moi = currentUser?.email?.toLowerCase();
+
+  const bloc = (titre, aide, lignes) => `
+    <div class="membres-groupe">
+      <h3 class="panel-titre">${titre}</h3>
+      ${aide ? `<p class="panel-aide">${aide}</p>` : ''}
+      ${lignes || '<p class="membres-vide">Personne.</p>'}
+    </div>`;
+
+  corps.innerHTML = [
+    bloc(`En attente${attente.length ? ` · ${attente.length}` : ''}`,
+      'Ces personnes lisent déjà le livre. Approuver leur ouvre le droit d\'y ajouter une recette.',
+      attente.map(m => ligneMembre(m,
+        bouton(m, 'approved', 'membre-btn--oui', 'Approuver') +
+        bouton(m, 'rejected', 'membre-btn--non', 'Refuser'))).join('')),
+
+    bloc('Approuvés', '',
+      approuves.map(m => ligneMembre(m,
+        `<span class="membre-role">${echapper(m.role)}</span>` +
+        // On ne se retire jamais soi-même : ce serait fermer la porte de l'intérieur,
+        // plus personne ne pourrait approuver personne.
+        (m.email.toLowerCase() === moi
+          ? '<span class="membre-moi">c\'est toi</span>'
+          : bouton(m, 'pending', 'membre-btn--non', 'Retirer')))).join('')),
+
+    refuses.length ? bloc('Refusés', '',
+      refuses.map(m => ligneMembre(m,
+        bouton(m, 'approved', 'membre-btn--oui', 'Approuver quand même'))).join('')) : '',
+  ].join('');
+}
+
+async function chargerMembres() {
+  const corps = document.getElementById('membresCorps');
+  if (corps) corps.innerHTML = '<div class="loading-state">…</div>';
+  const { data, error } = await sbClient
+    .from('family_members')
+    .select('email, display_name, avatar_url, status, role, requested_at')
+    .order('requested_at', { ascending: true });
+  if (error) {
+    console.error('Lecture des fiches famille :', error.message);
+    if (corps) corps.innerHTML = `<p class="membres-vide">Impossible de lire les demandes : ${echapper(error.message)}</p>`;
+    return;
+  }
+  membres = data || [];
+  nbEnAttente = membres.filter(m => m.status === 'pending').length;
+  dessinerMembres();
+  renderAuth();
+}
+
+async function changerStatutMembre(indice, statut) {
+  const fiche = membres[indice];
+  if (!fiche) return;
+  const email = fiche.email;
+  // On désactive toute la ligne pendant l'écriture : deux clics sur « Approuver »
+  // partiraient deux fois et le second écrirait par-dessus une réponse déjà reçue.
+  document.querySelectorAll('#membresCorps .membre-btn').forEach(b => { b.disabled = true; });
+  const { error } = await sbClient
+    .from('family_members')
+    .update({ status: statut, approved_at: statut === 'approved' ? new Date().toISOString() : null })
+    .eq('email', email);
+  if (error) {
+    console.error('Changement de statut :', error.message);
+    alert(`Impossible de changer l'accès de ${email} : ${error.message}`);
+  }
+  await chargerMembres();
+}
+
+function openMembres() {
+  document.getElementById('membresOverlay').classList.add('open');
+  chargerMembres();
+}
+function closeMembres() { document.getElementById('membresOverlay').classList.remove('open'); }
+function closeMembresOutside(e) { if (e.target === document.getElementById('membresOverlay')) closeMembres(); }
 
 async function initAuth() {
   if (!sbClient) {
@@ -2766,11 +2912,13 @@ async function initAuth() {
   const { data: { session } } = await sbClient.auth.getSession();
   currentUser = session?.user || null;
   if (currentUser) currentMember = await loadMember(currentUser);
+  await compterDemandes();
   renderAuth();
 
   sbClient.auth.onAuthStateChange(async (event, session) => {
     currentUser = session?.user || null;
     currentMember = currentUser ? await loadMember(currentUser) : null;
+    await compterDemandes();
     renderAuth();
   });
 }

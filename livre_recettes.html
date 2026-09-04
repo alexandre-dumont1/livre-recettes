@@ -127,6 +127,24 @@
   </div>
 </div>
 
+<!-- Les demandes d'accès. Le lien du livre se partage, donc n'importe qui peut
+     se connecter en Google : la fiche se crée en « pending » et n'ouvre rien.
+     Cette surcouche est le seul endroit où un administrateur approuve, sans
+     passer par le SQL. Elle n'existe que pour lui (voir renderAuth). -->
+<div class="membres-overlay" id="membresOverlay" role="dialog" aria-modal="true"
+     aria-label="Demandes d'accès au livre" onclick="closeMembresOutside(event)">
+  <div class="membres-panel">
+    <div class="membres-panel-header">
+      <div>
+        <div class="membres-panel-title">Qui entre dans le livre</div>
+        <div class="membres-panel-subtitle">Tout le monde peut lire. Une approbation ouvre le droit d'ajouter une recette.</div>
+      </div>
+      <button class="membres-close" onclick="closeMembres()" aria-label="Fermer les demandes d'accès">Fermer ✕</button>
+    </div>
+    <div id="membresCorps" aria-live="polite"></div>
+  </div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.js"></script>
 <!-- Le tournage de page. Figé dans le dépôt plutôt que chargé d'un CDN : le livre
