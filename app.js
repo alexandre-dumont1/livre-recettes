@@ -130,7 +130,7 @@ function toggleFav(id) {
   localStorage.setItem('recette-favoris', JSON.stringify(favs));
   // force : c'est la même recette, mais son étoile a changé. Sans ça, le livre
   // verrait la page déjà en place et ne la refabriquerait pas.
-  if (currentIndex < 0) remplirCouverture(); else showPage(currentIndex, { force: true });
+  if (currentIndex < 0) remplirSpread(currentIndex); else showPage(currentIndex, { force: true });
 }
 
 // ── COPIER LE LIEN ────────────────────────────────────────────────────────────
@@ -158,6 +158,121 @@ function buildTOCGroups(recipes) {
   // ordre alphabétique : les desserts pouvaient précéder les entrées.
   groupOrder.sort((a, b) => (CAT_ORDER[grouped[a].catId] ?? 99) - (CAT_ORDER[grouped[b].catId] ?? 99));
   return { grouped, groupOrder };
+}
+
+// ── LA TABLE DES MATIÈRES ────────────────────────────────────────────────────
+// Une vraie table, en vraies pages qu'on tourne, entre le menu et la première
+// recette. Elle liste ce que le livre contient VRAIMENT : si un filtre restreint
+// le livre, la table le suit, sinon ses numéros de page mentiraient.
+
+// Une seule colonne, pleine largeur. Deux colonnes ont été essayées et mesurées :
+// à 260 px de large, 40 % des titres passaient à la ligne (un titre replié fait
+// 57 px au lieu de 31,6) et la table sortait de sa page. Les titres du livre font
+// 27 caractères en médiane mais jusqu'à 62 ; à pleine largeur, un seul se replie.
+// (Les colonnes CSS `columns: 2` ont été essayées avant : elles fabriquaient une
+// TROISIÈME colonne dès que le contenu ne tenait pas, rognée en silence.)
+//
+// Le budget est en lignes, pas en pixels : on ne peut pas mesurer avant d'avoir
+// posé le papier. Mesuré dans le livre : une ligne fait 31,6 px, un titre de
+// chapitre 40,2 px avec ses marges, la hauteur utile d'une page 829 px — et 761
+// sur la première, qui porte en plus le titre « Table des matières ».
+const LIGNES_PAR_PAGE_TABLE = 25;
+const LIGNES_PREMIERE_PAGE_TABLE = 23;
+const POIDS_CHAPITRE = 1.5;
+const CARACTERES_PAR_LIGNE = 58;   // au-delà, le titre se replie et pèse double
+
+function lignesDeLaTable() {
+  const { grouped, groupOrder } = buildTOCGroups(filteredRecipes);
+  const lignes = [];
+  for (const cat of groupOrder) {
+    lignes.push({ type: 'chapitre', nom: cat, poids: POIDS_CHAPITRE });
+    for (const { r, i } of grouped[cat].items) {
+      lignes.push({
+        type: 'recette', titre: r.title, idx: i,
+        // Une recette occupe deux pages en regard : son numéro est celui de gauche.
+        page: i * 2 + 1,
+        poids: Math.ceil((r.title || '').length / CARACTERES_PAR_LIGNE) || 1,
+      });
+    }
+  }
+  return lignes;
+}
+
+// Découpage en pages. Un titre de chapitre ne reste jamais seul en bas d'une
+// page : sans au moins une recette derrière lui, il passe à la page suivante
+// avec elle.
+function pagesDeLaTable() {
+  const lignes = lignesDeLaTable();
+  const pages = [];
+  let page = [], poids = 0, chapitre = null;
+  const budget = () => pages.length === 0 ? LIGNES_PREMIERE_PAGE_TABLE : LIGNES_PAR_PAGE_TABLE;
+  // Une page qui ne commence pas par un chapitre rappelle celui qu'on est en
+  // train de lire, comme le fait un livre imprimé : sans ça, la page de droite
+  // était une liste de titres sans rattachement.
+  const ouvrirPage = () => {
+    page = []; poids = 0;
+    if (chapitre) { page.push({ type: 'suite', nom: chapitre, poids: POIDS_CHAPITRE }); poids += POIDS_CHAPITRE; }
+  };
+  for (let k = 0; k < lignes.length; k++) {
+    const l = lignes[k];
+    const orphelin = l.type === 'chapitre' && poids + l.poids + 1 > budget();
+    if (page.length && (poids + l.poids > budget() || orphelin)) { pages.push(page); ouvrirPage(); }
+    // Le chapitre qui s'ouvre remplace le rappel qu'on venait peut-être de poser.
+    if (l.type === 'chapitre') {
+      chapitre = l.nom;
+      if (page.length === 1 && page[0].type === 'suite') { page = []; poids = 0; }
+    }
+    page.push(l);
+    poids += l.poids;
+  }
+  if (page.length && page.some(l => l.type !== 'suite')) pages.push(page);
+  return pages;
+}
+
+// Les pages d'ouverture se numérotent en chiffres romains, comme dans un livre :
+// i la garde, ii le menu, puis la table. Les recettes reprennent à 1.
+function romain(n) {
+  const t = [[10, 'x'], [9, 'ix'], [5, 'v'], [4, 'iv'], [1, 'i']];
+  let out = '';
+  for (const [v, l] of t) while (n >= v) { out += l; n -= v; }
+  return out;
+}
+
+function ligneTableHTML(l) {
+  if (l.type === 'chapitre') return `<div class="tdm-chapitre">${echapper(l.nom)}</div>`;
+  if (l.type === 'suite') return `<div class="tdm-chapitre tdm-suite">${echapper(l.nom)} <span>(suite)</span></div>`;
+  return `<button class="tdm-ligne" onclick="allerALaRecette(${l.idx})">
+     <span class="tdm-nom">${echapper(l.titre)}</span>
+     <span class="tdm-points" aria-hidden="true"></span>
+     <span class="tdm-numero">${l.page}</span>
+   </button>`;
+}
+
+function tableHTML(lignes, numeroPage, premiere) {
+  return `
+    <div class="tdm-page">
+      ${premiere ? '<h2 class="tdm-titre">Table des matières</h2>' : ''}
+      <div class="tdm-liste">${lignes.map(ligneTableHTML).join('')}</div>
+      <span class="garde-page-num">${romain(numeroPage)}</span>
+    </div>`;
+}
+
+// Depuis la table on saute à la recette, sans animer : on ne va pas tourner
+// soixante feuilles pour arriver au gratin.
+function allerALaRecette(idx) { return showPage(idx); }
+
+// Poser la table sur ses feuillets. `idx` est une double d'ouverture négative :
+// -(1+doublesTable) est la garde, les suivantes sont la table.
+function remplirTable(idx) {
+  const pages = pagesDeLaTable();
+  const rang = idx - premiereDouble() - 1;      // 0 pour la première double de table
+  const { gauche, droite } = pagesDe(idx);
+  if (!gauche || !droite) return;
+  const g = pages[rang * 2], d = pages[rang * 2 + 1];
+  // ii est le menu : la table commence donc à iii.
+  const num = 3 + rang * 2;
+  gauche.innerHTML = g ? tableHTML(g, num, rang === 0) : '';
+  droite.innerHTML = d ? tableHTML(d, num + 1, false) : '';
 }
 
 // Fabrique la garde et le menu dans les deux premiers feuillets du livre. Cette
@@ -251,7 +366,7 @@ function remplirCouverture() {
 // depuis la première recette, et lui anime.
 function showCover() {
   remplirCouverture();
-  return arriverA(-1);
+  return arriverA(GARDE);
 }
 
 // Les portes d'entrée du menu. Chacune restreint le livre puis ouvre la première
@@ -741,6 +856,30 @@ function renderRight(recipe, docs, surLeFeuillet) {
 // pour les vignettes de manuscrit.
 let fondsManuscrits = [];
 
+// Dessiner un feuillet sur un canevas, sans jamais superposer deux rendus.
+// pdf.js refuse un second rendu tant que le premier tient le canevas, et ça
+// arrive dès qu'on navigue vite : le feuillet est refabriqué avant la fin du
+// dessin. Ni un simple `cancel()` ni un « annuler puis attendre » ne suffisent —
+// d'autres appels s'intercalent entre les deux. On sérialise : chaque canevas
+// porte SA file, et le rendu suivant part quand le précédent est retombé.
+// `cancel()` sert seulement à la faire retomber vite ; une annulation est le cas
+// normal ici, on l'avale.
+function rendreSurCanevas(c, page, vp) {
+  c._rendu?.cancel?.();
+  c._file = (c._file ?? Promise.resolve()).catch(() => {}).then(() => {
+    // Pas de garde-fou « le canevas est-il encore dans la page ? » : la garde est
+    // refabriquée deux fois au démarrage, et sauter le rendu sur le canevas
+    // détaché faisait aussi sauter le seul rendu qui comptait. Dessiner dans le
+    // vide ne coûte qu'un peu de calcul.
+    c.width = Math.ceil(vp.width);
+    c.height = Math.ceil(vp.height);
+    const tache = page.render({ canvasContext: c.getContext('2d'), viewport: vp });
+    c._rendu = tache;
+    return tache.promise.catch(() => {}).finally(() => { if (c._rendu === tache) c._rendu = null; });
+  });
+  return c._file;
+}
+
 async function renderGardeFond() {
   const c = document.getElementById('gardeFond');
   if (!c || !window.pdfjsLib || !fondsManuscrits.length) return;
@@ -764,9 +903,7 @@ async function renderGardeFond() {
       const vp1 = page.getViewport({ scale: 1 });
       const echelle = Math.max(l / vp1.width, h / vp1.height);
       const vp = page.getViewport({ scale: echelle });
-      c.width = Math.ceil(vp.width);
-      c.height = Math.ceil(vp.height);
-      await page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
+      await rendreSurCanevas(c, page, vp);
       c.classList.add('garde-fond--pret');
     });
   } catch (err) {
@@ -806,9 +943,7 @@ function renderPDF(url, racine) {
         const availW = container.clientWidth - 8;
         const naturalVp = page.getViewport({ scale: 1 });
         const vp = page.getViewport({ scale: availW / naturalVp.width });
-        c.width = vp.width;
-        c.height = vp.height;
-        page.render({ canvasContext: c.getContext('2d'), viewport: vp });
+        rendreSurCanevas(c, page, vp);
       });
     })
     .catch(() => {
@@ -935,7 +1070,21 @@ function majFilteredRecipes() {
   livrePerime = true;
 }
 
-function pageDuSpread(idx) { return idx < 0 ? 0 : 2 + idx * 2; }
+// Les doubles d'ouverture portent des indices NÉGATIFS et se lisent dans l'ordre
+// croissant : la garde d'abord, puis la table, puis la recette 0. Le nombre de
+// doubles de table dépend du nombre de recettes affichées, donc il se recalcule
+// à chaque fabrication du livre.
+let doublesTable = 0;
+function premiereDouble() { return -(1 + doublesTable); }
+
+// « Va à la garde » ne peut pas s'écrire -1 : un filtre change l'épaisseur de la
+// table, donc l'indice de la garde change aussi. On vise par intention.
+const GARDE = 'garde';
+
+function pageDuSpread(idx) { return (idx + 1 + doublesTable) * 2; }
+// L'inverse, pour traduire ce que raconte la bibliothèque quand le lecteur
+// attrape un coin de page lui-même.
+function spreadDeLaPage(n) { return Math.floor(n / 2) - 1 - doublesTable; }
 function pagesDe(idx) {
   const n = pageDuSpread(idx);
   return { gauche: feuillets[n], droite: feuillets[n + 1] };
@@ -983,6 +1132,17 @@ function construireFeuillets() {
   // titre pour que le menu soit visible à l'ouverture (voir styles.css).
   ajoute('article', 'page-left page--garde', 'Page de garde');
   ajoute('aside', 'page-right page--menu', 'Sommaire du livre');
+
+  // La table s'intercale entre le menu et la première recette. Son épaisseur
+  // dépend du nombre de recettes affichées : on la mesure ICI, avant de poser
+  // les feuillets, parce que tous les repères de pagination en dépendent.
+  const pagesTable = pagesDeLaTable();
+  doublesTable = Math.ceil(pagesTable.length / 2);
+  for (let k = 0; k < doublesTable; k++) {
+    ajoute('article', 'page-left page--table', `Table des matières, page ${k * 2 + 1}`);
+    ajoute('aside', 'page-right page--table', `Table des matières, page ${k * 2 + 2}`);
+  }
+
   filteredRecipes.forEach(r => {
     ajoute('article', 'page-left', `Recette : ${r.title}`);
     ajoute('aside', 'page-right', 'Manuscrit et détails de la recette');
@@ -997,6 +1157,9 @@ async function monterLivre(idx) {
     livreFlip = null;
   }
   construireFeuillets();          // refabrique le conteneur si destroy l'a emporté
+  // construireFeuillets() vient de recalculer doublesTable : c'est seulement
+  // maintenant que « la garde » a un indice sûr.
+  if (idx === GARDE) idx = premiereDouble();
   const livre = conteneurLivre();
   remplirCouverture();
 
@@ -1025,7 +1188,7 @@ async function monterLivre(idx) {
 
   // On écoute la bibliothèque au lieu de tenir un compteur en double : elle sait
   // où on est, y compris quand le lecteur attrape un coin de page à la souris.
-  livreFlip.on('flip', e => surArrivee(Math.floor(e.data / 2) - 1));
+  livreFlip.on('flip', e => surArrivee(spreadDeLaPage(e.data)));
   // Toute position autre que « read » veut dire qu'une feuille bouge : coin
   // soulevé au survol, page attrapée à la souris, ou animation en cours. Pendant
   // ce temps la page ne doit plus être une zone de défilement, sinon le navigateur
@@ -1043,7 +1206,8 @@ async function monterLivre(idx) {
 // Le contenu est posé AVANT que la feuille bouge : une page qui arrive vide
 // pendant l'animation ruinerait tout l'effet.
 async function remplirSpread(idx, force = false) {
-  if (idx < 0) return remplirCouverture();
+  if (idx === premiereDouble()) return remplirCouverture();
+  if (idx < 0) return remplirTable(idx);
   const r = filteredRecipes[idx];
   const { gauche, droite } = pagesDe(idx);
   if (!r || !gauche || !droite) return;
@@ -1073,8 +1237,9 @@ async function remplirSpread(idx, force = false) {
 // de page à tout moment, et il ne doit jamais tomber sur du papier blanc.
 function preparerVoisines(idx) {
   [idx - 1, idx + 1].forEach(v => {
-    if (v < 0 || v >= filteredRecipes.length) return;
-    remplirSpread(v).catch(() => {});
+    if (v < premiereDouble() || v >= filteredRecipes.length) return;
+    remplirSpread(v)?.catch?.(() => {});
+    if (v < 0) return;              // la garde et la table n'ont rien à charger
     const r = filteredRecipes[v];
     sb(`recipe_ingredients?select=*,ingredients(name)&recipe_id=eq.${r.id}&order=display_order`).catch(() => {});
     sb(`recipe_steps?select=*&recipe_id=eq.${r.id}&order=step_number`).catch(() => {});
@@ -1098,12 +1263,13 @@ function surArrivee(idx) {
   else if (r) history.replaceState(null, '', '#' + (r.slug || r.id));
   if (!livreFlip) marquerCourante(idx);
   updateControls();
-  if (idx < 0) renderGardeFond();
+  if (idx === premiereDouble()) renderGardeFond();
   preparerVoisines(idx);
 }
 
 async function arriverA(idx, { animer = false, force = false } = {}) {
   if (livrePerime) { livrePerime = false; return monterLivre(idx); }
+  if (idx === GARDE) idx = premiereDouble();
   // Le contenu est chargé depuis le réseau : sans ce verrou, deux clics rapprochés
   // lanceraient deux arrivées, et la seconde tournerait la page avant que la
   // première ait fini d'écrire dessus.
@@ -1140,13 +1306,15 @@ function showPage(idx, options) { return arriverA(idx, options); }
 function changePage(dir) {
   if (enTrainDeTourner) return;
   const suivant = currentIndex + dir;
-  if (suivant < -1 || suivant >= filteredRecipes.length) return;
-  if (suivant < 0) remplirCouverture();   // le menu compte les favoris : on le refait
+  if (suivant < premiereDouble() || suivant >= filteredRecipes.length) return;
+  // Le menu compte les favoris : on le refait à chaque passage, sinon le décompte
+  // serait celui du chargement de la page.
+  if (suivant === premiereDouble()) remplirCouverture();
   return arriverA(suivant, { animer: true });
 }
 
 function updateControls() {
-  const atCover = currentIndex === -1;
+  const atCover = currentIndex === premiereDouble();
   document.getElementById('prevBtn').disabled = atCover;
   document.getElementById('nextBtn').disabled = currentIndex >= filteredRecipes.length - 1;
 
@@ -1154,11 +1322,16 @@ function updateControls() {
   // barre en fin de recette : « Suivante » seul ne dit pas où l'on va, alors que
   // le titre donne une raison de tourner la page. Masqué sur grand écran, où les
   // flèches restent deux pastilles sur les bords.
-  const nomVoisin = i => (i === -1 ? 'Le menu du livre' : (filteredRecipes[i]?.title || ''));
+  const nomVoisin = i => i === premiereDouble() ? 'Le menu du livre'
+                       : i < 0 ? 'La table des matières'
+                       : (filteredRecipes[i]?.title || '');
   document.getElementById('prevTitre').textContent = atCover ? '' : nomVoisin(currentIndex - 1);
   document.getElementById('nextTitre').textContent = nomVoisin(currentIndex + 1);
-  document.getElementById('pageCounter').textContent = atCover
-    ? `i\u202f/\u202fii`
+  // Les pages d'ouverture se comptent en romain, les recettes en arabe : c'est
+  // la convention du livre imprimé, et elle dit au lecteur où il se trouve.
+  const pagesOuverture = 2 + doublesTable * 2;
+  document.getElementById('pageCounter').textContent = currentIndex < 0
+    ? `${romain(pageDuSpread(currentIndex) + 1)}\u202f/\u202f${romain(pagesOuverture)}`
     : `${currentIndex + 1}\u202f/\u202f${filteredRecipes.length}`;
 }
 
@@ -1176,7 +1349,10 @@ function applyFilterLogic() {
 
 function applyFilter() {
   majFilteredRecipes();
-  currentIndex = -1;
+  // Un NOMBRE, pas l'intention : en mode galerie personne ne navigue derrière,
+  // et une chaîne ici donnerait un NaN au premier calcul de voisin. La valeur
+  // est de toute façon réécrite par showCover() dans l'autre branche.
+  currentIndex = premiereDouble();
   if (document.body.classList.contains('gallery-mode')) {
     showGallery();
   } else {
@@ -2950,7 +3126,10 @@ async function initAuth() {
     sb('recipe_documents?select=public_url&kind=eq.manuscript&limit=40')
       .then(docs => {
         fondsManuscrits = docs.map(d => d.public_url).filter(Boolean);
-        if (currentIndex === -1) renderGardeFond();
+        // La liste des feuillets de fond arrive après le premier affichage : si le
+  // lecteur est encore sur la garde, on la dessine maintenant. `-1` n'est plus
+  // la garde depuis que la table s'intercale — c'est premiereDouble().
+  if (currentIndex === premiereDouble()) renderGardeFond();
       })
       .catch(() => {});
 
