@@ -45,7 +45,10 @@ def serrer(a):
     oy, ox = max(ys.min() - 6, 0), max(xs.min() - 6, 0)
     return a[oy:ys.max() + 6, ox:xs.max() + 6], oy, ox
 
-nouvelles = {'_note': 'Généré par decouper-titres.py : [hauteur d’x, ligne de base] dans titres/<id>.png.'}
+# On COMPLÈTE le fichier existant : relancer sur quelques titres seulement ne
+# doit pas effacer les mesures des autres (vécu le 02/10).
+nouvelles = json.load(open('scripts/titres-mesures.json')) if os.path.exists('scripts/titres-mesures.json') else {}
+nouvelles['_note'] = 'Généré par decouper-titres.py : [hauteur d’x, ligne de base] dans titres/<id>.png.'
 for k, (x0, x1, y0, y1) in B.items():
     if seuls and k not in seuls: continue
     g = cv2.imread(f'{HI}/{k}.png', cv2.IMREAD_GRAYSCALE)
