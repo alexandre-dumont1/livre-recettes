@@ -48,14 +48,21 @@ function duree(min) {
 
 // Pour la recherche : sans accents ni majuscules, « creme » trouve « Crème ».
 function plier(t) {
-  return String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  return String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 }
 
 function titreHTML(r, classe) {
   const dim = TITRES[r.id];
   if (!dim) return `<span class="titre-tape ${classe}-tape">${echapper(r.title)}</span>`;
-  return `<img class="titre-main ${classe}" src="titres/${r.id}.png" width="${dim[0]}" height="${dim[1]}"
-    alt="${echapper(r.title)}" decoding="async">`;
+  // Tous les titres à la même taille de lettres et posés sur la même ligne
+  // d'écriture : --k = hauteur de l'image en hauteurs d'x, --d = ce qui dépasse
+  // sous la ligne d'écriture (jambages, soulignement). Mesuré par
+  // scripts/mesurer-titres.py. Le plafond évite qu'une mesure ratée fasse
+  // exploser un titre.
+  const [w, h, hx, base] = dim;
+  const k = Math.min(h / hx, 9), d = Math.min((h - base) / hx, 4);
+  return `<img class="titre-main ${classe}" src="titres/${r.id}.png" width="${w}" height="${h}"
+    style="--k:${k.toFixed(3)};--d:${d.toFixed(3)}" alt="${echapper(r.title)}" decoding="async">`;
 }
 
 // ── CHARGEMENT ───────────────────────────────────────────────────────────────

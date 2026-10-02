@@ -72,10 +72,12 @@ main:focus, main:focus-visible { outline: none; }   /* le focus y est posé à c
 .mur { display: grid; gap: 56px; }
 .chapitre-tete { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 22px; }
 .chapitre-tete h2 { font: 700 21px var(--f-voix); }
-.mur-titres { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 20px 44px; }
+.mur-titres { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; gap: 34px 44px; --x: 15px;
+  padding-bottom: calc(var(--x) * 3);   /* place pour ce qui descend sous la ligne d'écriture (marge négative des titres) */ }
 .mur-lien { display: block; padding: 6px 8px; border-radius: 6px; transition: transform .18s ease, background-color .18s ease; }
 .mur-lien:hover { background: var(--orange-pale); transform: translateY(-2px); }
-.mur-img { display: block; height: 58px; width: auto; max-width: min(100%, 560px); object-fit: contain; }
+/* hauteur = k hauteurs d'x ; la marge négative pose la ligne d'écriture sur la ligne commune */
+.mur-img { display: block; height: calc(var(--k) * var(--x)); width: auto; max-width: min(100%, 560px); object-fit: contain; object-position: left bottom; margin-bottom: calc(var(--d) * var(--x) * -1); }
 .mur-tapes { list-style: none; margin: 22px auto 0; padding: 0; max-width: 820px; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 22px; }
 .mur-lien-tape { font: 400 15px/1.8 var(--f-voix); color: var(--gris); text-decoration: none; }
 .mur-lien-tape:hover { color: var(--encre); text-decoration: underline; }
@@ -90,7 +92,8 @@ main:focus, main:focus-visible { outline: none; }   /* le focus y est posé à c
 .rubrique { font: 700 15px var(--f-voix); text-decoration: none; }
 .rubrique:hover { text-decoration: underline; }
 .recette-titre { display: flex; justify-content: center; width: 100%; }
-.recette-img { display: block; width: auto; height: auto; max-width: min(100%, 560px); max-height: 150px; }
+.recette-titre { --x: 28px; }
+.recette-img { display: block; width: auto; height: calc(var(--k) * var(--x)); max-width: min(100%, 600px); object-fit: contain; }
 .titre-tape { font: 800 clamp(30px, 4vw, 44px)/1.08 var(--f-voix); text-align: center; letter-spacing: -.01em; }
 .mur-img-tape { font-size: 22px; }
 .pastilles { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px 16px; }
@@ -148,7 +151,7 @@ body.loupe-ouverte { overflow: hidden; }
   .accueil-tete { padding: 36px 0 28px; }
   .mur { gap: 40px; }
   .mur-titres { gap: 10px 22px; }
-  .mur-img { height: 40px; }
+  .mur-titres { --x: 11px; }
   .double { grid-template-columns: 1fr; border: 0; margin-top: 12px; }
   .page-texte { padding: 20px 0 10px; display: contents; }
   .double > .page-texte > * { margin-bottom: 14px; }
@@ -159,7 +162,7 @@ body.loupe-ouverte { overflow: hidden; }
   .colonnes { order: 6; grid-template-columns: 1fr; gap: 24px; }
   .sa-note { order: 7; } .folio { order: 8; grid-template-columns: 1fr 1fr; }
   .folio-chap { grid-column: 1 / -1; grid-row: 1; }
-  .recette-img { max-height: 110px; }
+  .recette-titre { --x: 20px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
