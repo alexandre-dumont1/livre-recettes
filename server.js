@@ -38,6 +38,13 @@ const FICHIERS = {
   // Bibliothèque tierce figée dans le dépôt, faute d'étape de construction.
   // Provenance, licence et empreinte : vendor/README.md.
   '/vendor/page-flip.browser.js': { file: 'vendor/page-flip.browser.js', type: 'text/javascript; charset=utf-8' },
+  // La version « façon Whoogy's », servie à côté de l'ancienne tant qu'elle
+  // n'est pas validée. Les titres manuscrits (titres/<id>.png) passent par la
+  // route dédiée plus bas, qui n'accepte qu'un nombre.
+  '/nouveau': { file: 'nouveau.html', type: 'text/html; charset=utf-8' },
+  '/nouveau.js': { file: 'nouveau.js', type: 'text/javascript; charset=utf-8' },
+  '/nouveau.css': { file: 'nouveau.css', type: 'text/css; charset=utf-8' },
+  '/titres-manifeste.js': { file: 'titres-manifeste.js', type: 'text/javascript; charset=utf-8' },
 };
 
 // Le HTML n'est jamais mis en cache, sinon une correction de recette peut mettre
@@ -490,7 +497,13 @@ const server = createServer(async (req, res) => {
     return res.end(configJs());
   }
 
-  const cible = FICHIERS[chemin];
+  // Un titre découpé sur sa feuille. Seul un identifiant numérique passe : pas
+  // de « ../ » possible, donc rien d'autre du disque n'est lisible par ici.
+  // Ces images ne changent pas : on les garde en cache une semaine.
+  const titre = chemin.match(/^\/titres\/(\d{1,5})\.png$/);
+  const cible = titre
+    ? { file: `titres/${titre[1]}.png`, type: 'image/png', cache: 'public, max-age=604800' }
+    : FICHIERS[chemin];
   if (!cible) {
     res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
     return res.end('<p>Cette page n\'existe pas. <a href="/">Retour au livre</a></p>');
@@ -500,11 +513,15 @@ const server = createServer(async (req, res) => {
     const contenu = await readFile(join(ROOT, cible.file));
     res.writeHead(200, {
       'Content-Type': cible.type,
-      'Cache-Control': CACHE[cible.type] || 'no-cache',
+      'Cache-Control': cible.cache || CACHE[cible.type] || 'no-cache',
       'X-Content-Type-Options': 'nosniff',
     });
     res.end(contenu);
   } catch (err) {
+    if (titre && err.code === 'ENOENT') {
+      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+      return res.end('Titre introuvable');
+    }
     console.error(`Lecture impossible de ${cible.file} :`, err.message);
     res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
     res.end('Erreur serveur');
