@@ -12,7 +12,7 @@ Usage : ~/one-dm-manou/.venv/bin/python scripts/mesurer-titres.py
 import cv2, numpy as np, json, os
 
 dossier = 'titres'
-oeil = json.load(open('scripts/titres-mesures-oeil.json'))
+oeil = json.load(open('scripts/titres-mesures.json'))   # écrit par decouper-titres.py
 res = {}
 for f in sorted(os.listdir(dossier), key=lambda x: int(x.split('.')[0])):
     i = int(f.split('.')[0])
