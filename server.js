@@ -501,8 +501,13 @@ const server = createServer(async (req, res) => {
   // de « ../ » possible, donc rien d'autre du disque n'est lisible par ici.
   // Ces images ne changent pas : on les garde en cache une semaine.
   const titre = chemin.match(/^\/titres\/(\d{1,5})\.png$/);
+  // Maquettes de comparaison, servies seulement en local (jamais sur Railway :
+  // demos/ y est exclu par .railwayignore, la lecture échoue en 404).
+  const vignette = chemin.match(/^\/idees\/feuilles\/(\d{1,5})\.jpg$/);
   const cible = titre
     ? { file: `titres/${titre[1]}.png`, type: 'image/png', cache: 'public, max-age=604800' }
+    : vignette ? { file: `demos/apercus/mur-variantes/feuilles/${vignette[1]}.jpg`, type: 'image/jpeg' }
+    : chemin === '/idees' ? { file: 'demos/apercus/mur-variantes/index.html', type: 'text/html; charset=utf-8' }
     : FICHIERS[chemin];
   if (!cible) {
     res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
@@ -518,7 +523,7 @@ const server = createServer(async (req, res) => {
     });
     res.end(contenu);
   } catch (err) {
-    if (titre && err.code === 'ENOENT') {
+    if ((titre || vignette || chemin === '/idees') && err.code === 'ENOENT') {
       res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
       return res.end('Titre introuvable');
     }

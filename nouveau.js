@@ -59,9 +59,9 @@ function titreHTML(r, classe) {
   // sous la ligne d'écriture (jambages, soulignement). Mesuré par
   // scripts/mesurer-titres.py. Le plafond évite qu'une mesure ratée fasse
   // exploser un titre.
-  const [w, h, hx, base] = dim;
+  const [w, h, hx, base, v] = dim;
   const k = Math.min(h / hx, 9), d = Math.min((h - base) / hx, 4);
-  return `<img class="titre-main ${classe}" src="titres/${r.id}.png" width="${w}" height="${h}"
+  return `<img class="titre-main ${classe}" src="titres/${r.id}.png?v=${v}" width="${w}" height="${h}"
     style="--k:${k.toFixed(3)};--d:${d.toFixed(3)}" alt="${echapper(r.title)}" decoding="async">`;
 }
 
@@ -101,8 +101,11 @@ function dessinerMur() {
     if (!vues.length) return '';
     // Ses titres d'abord, les fiches imprimées ensuite : sur le mur, c'est elle
     // qu'on voit en premier.
-    const main = vues.filter(r => TITRES[r.id]);
-    const tape = vues.filter(r => !TITRES[r.id]);
+    // L'index d'un livre : un titre par ligne, points de conduite, numéro de la
+    // recette dans le chapitre. Ses titres d'abord ; les fiches imprimées, qui
+    // n'ont pas de titre de sa main, suivent en caractères.
+    const ordre = [...vues.filter(r => TITRES[r.id]), ...vues.filter(r => !TITRES[r.id])];
+    const numero = r => String(toutes.indexOf(r) + 1).padStart(2, '0');
     const nom = NOMS_CHAPITRES[c.id] || c.name || 'Autres';
     return `
       <section class="chapitre" aria-labelledby="chap-${c.id}">
@@ -110,12 +113,12 @@ function dessinerMur() {
           <h2 id="chap-${c.id}">${echapper(nom)}</h2>
           <span class="pastille">${q ? `${vues.length} sur ${toutes.length}` : `${toutes.length} recettes`}</span>
         </div>
-        <ul class="mur-titres" role="list">
-          ${main.map(r => `<li><a class="mur-lien" href="#/recette/${encodeURIComponent(r.slug)}">${titreHTML(r, 'mur-img')}</a></li>`).join('')}
-        </ul>
-        ${tape.length ? `<ul class="mur-tapes" role="list">
-          ${tape.map(r => `<li><a class="mur-lien-tape" href="#/recette/${encodeURIComponent(r.slug)}">${echapper(r.title)}</a></li>`).join('')}
-        </ul>` : ''}
+        <ol class="index" role="list">
+          ${ordre.map(r => `<li><a class="index-ligne${TITRES[r.id] ? '' : ' index-ligne--tape'}" href="#/recette/${encodeURIComponent(r.slug)}">
+            ${TITRES[r.id] ? titreHTML(r, 'mur-img') : `<span class="index-tape">${echapper(r.title)}</span>`}
+            <span class="index-points" aria-hidden="true"></span>
+            <span class="index-num">${numero(r)}</span></a></li>`).join('')}
+        </ol>
       </section>`;
   }).join('');
   return blocs || `<p class="vide">Aucune recette ne contient « ${echapper(q)} ». Essaie un ingrédient, par exemple « chocolat ».</p>`;

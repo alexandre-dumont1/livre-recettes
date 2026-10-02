@@ -51,11 +51,15 @@ for f in sorted(os.listdir(dossier), key=lambda x: int(x.split('.')[0])):
     # La mesure à l'œil l'emporte : aucune formule n'a tenu sur toute son
     # écriture (capitales, feutre, soulignements épais, annotations).
     if str(i) in oeil: hx, base = oeil[str(i)]
-    res[i] = [w, h, max(hx, 4), base]
+    # Empreinte du fichier : ajoutée à l'adresse de l'image (?v=…), pour qu'un
+    # navigateur qui a gardé l'ancienne découpe en cache prenne la nouvelle.
+    import hashlib
+    v = hashlib.md5(open(f'{dossier}/{f}', 'rb').read()).hexdigest()[:8]
+    res[i] = [w, h, max(hx, 4), base, v]
 
 open('titres-manifeste.js', 'w').write(
     "// Généré par scripts/mesurer-titres.py depuis titres/*.png.\n"
-    "// id de recette → [largeur, hauteur, hauteur d'x, ligne de base] du titre\n"
+    "// id de recette → [largeur, hauteur, hauteur d'x, ligne de base, empreinte] du titre\n"
     "// manuscrit, en pixels de l'image. Sert à les mettre tous à la même taille\n"
     "// de lettres et sur la même ligne d'écriture.\n"
     f"window.TITRES_MANUSCRITS = {json.dumps(res)};\n")

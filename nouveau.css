@@ -72,21 +72,17 @@ main:focus, main:focus-visible { outline: none; }   /* le focus y est posé à c
 .mur { display: grid; gap: 56px; }
 .chapitre-tete { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 22px; }
 .chapitre-tete h2 { font: 700 21px var(--f-voix); }
-/* Chaque titre dans sa case, cadre fin orange comme les étiquettes de Whoogy's.
-   Les cases d'une même rangée ont la même hauteur ; le titre y est centré. */
-.mur-titres { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; align-items: stretch; gap: 10px; --x: 12px; }
-.mur-titres > li { display: flex; }
-.mur-lien {
-  display: flex; align-items: center; justify-content: center; padding: 12px 16px;
-  border: 1.5px solid var(--orange); background: var(--papier);
-  transition: background-color .18s ease, border-color .18s ease, transform .18s ease;
-}
-.mur-lien:hover { background: var(--orange-pale); border-color: var(--orange-fonce); transform: translateY(-2px); }
-/* hauteur = k hauteurs d'x ; la marge négative pose la ligne d'écriture sur la ligne commune */
-.mur-img { display: block; height: calc(var(--k) * var(--x)); width: auto; max-width: min(100%, 420px); object-fit: contain; }
-.mur-tapes { list-style: none; margin: 22px auto 0; padding: 0; max-width: 820px; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 22px; }
-.mur-lien-tape { font: 400 15px/1.8 var(--f-voix); color: var(--gris); text-decoration: none; }
-.mur-lien-tape:hover { color: var(--encre); text-decoration: underline; }
+/* L'index du livre : un titre par ligne, des points de conduite, le numéro de
+   la recette dans le chapitre. Deux colonnes sur grand écran. */
+.index { list-style: none; margin: 0 auto; padding: 0; max-width: 1040px; columns: 2 440px; column-gap: 64px; --x: 11px; }
+.index > li { break-inside: avoid; }
+.index-ligne { display: flex; align-items: flex-end; gap: 10px; padding: 11px 4px 9px; border-bottom: 1px solid var(--filet); text-decoration: none; transition: background-color .15s ease; }
+.index-ligne:hover { background: var(--orange-pale); }
+.index-ligne:hover .index-num { color: var(--orange-fonce); }
+.mur-img { display: block; height: calc(var(--k) * var(--x)); width: auto; max-width: min(100%, 380px); object-fit: contain; flex: 0 1 auto; min-width: 0; }
+.index-tape { font: 400 16px/1.35 var(--f-voix); color: var(--gris); }
+.index-points { flex: 1; min-width: 16px; border-bottom: 2px dotted #c4c4c4; margin-bottom: 5px; }
+.index-num { font: 600 14px/1 var(--f-texte); font-variant-numeric: tabular-nums; color: var(--gris); margin-bottom: 2px; }
 
 /* ── Une recette, en double page ─────────────────────── */
 .double {
@@ -156,9 +152,7 @@ body.loupe-ouverte { overflow: hidden; }
   main { padding: 0 16px 60px calc(16px + var(--tranche)); }
   .accueil-tete { padding: 36px 0 28px; }
   .mur { gap: 40px; }
-  .mur-titres { gap: 8px; }
-  .mur-lien { padding: 10px 12px; }
-  .mur-titres { --x: 11px; }
+  .index { --x: 10px; }
   .double { grid-template-columns: 1fr; border: 0; margin-top: 12px; }
   .page-texte { padding: 20px 0 10px; display: contents; }
   .double > .page-texte > * { margin-bottom: 14px; }
