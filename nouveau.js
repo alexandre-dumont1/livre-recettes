@@ -508,6 +508,13 @@ window.LIVRE = {
 function main() { return document.getElementById('contenu'); }
 
 function router() {
+  // Les liens partagés avec l'ancienne version (« /#choucroute-denise », ou
+  // l'identifiant « /#9 ») doivent continuer d'ouvrir leur recette.
+  const ancien = decodeURIComponent(location.hash.slice(1));
+  if (ancien && !ancien.startsWith('/')) {
+    const r = etat.recettes.find(x => x.slug === ancien) || (/^\d+$/.test(ancien) && etat.recettes.find(x => x.id === Number(ancien)));
+    if (r) { history.replaceState(null, '', `#/recette/${encodeURIComponent(r.slug)}`); return afficherRecette(r.slug); }
+  }
   const m = location.hash.match(/^#\/recette\/(.+)$/);
   if (m) afficherRecette(decodeURIComponent(m[1]));
   else afficherAccueil();
