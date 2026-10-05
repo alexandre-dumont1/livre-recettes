@@ -30,7 +30,10 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
 // (livre_recettes_1.html, _2) et les maquettes de demos/ ne doivent pas être
 // accessibles publiquement. Pour en exposer une, il faut l'ajouter ici.
 const FICHIERS = {
-  '/': { file: 'livre_recettes.html', type: 'text/html; charset=utf-8' },
+  // Depuis le 05/10/2026, l'accueil est la version « façon Whoogy's ».
+  // L'ancienne (le livre qui tourne) reste à /ancien, et à son ancienne adresse.
+  '/': { file: 'nouveau.html', type: 'text/html; charset=utf-8' },
+  '/ancien': { file: 'livre_recettes.html', type: 'text/html; charset=utf-8' },
   '/livre_recettes.html': { file: 'livre_recettes.html', type: 'text/html; charset=utf-8' },
   '/app.js': { file: 'app.js', type: 'text/javascript; charset=utf-8' },
   '/styles.css': { file: 'styles.css', type: 'text/css; charset=utf-8' },
