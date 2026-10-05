@@ -15,6 +15,17 @@
   --f-texte: "Archivo", system-ui, -apple-system, sans-serif;
   --tranche: 8px;
   color-scheme: light;
+
+  /* Les panneaux pour contribuer (contribuer.css) viennent de l'ancienne
+     version et suivent ses jetons : on les repeint aux couleurs de celle-ci. */
+  --primitive-font-marqueur: var(--f-voix);
+  --color-page: var(--papier);
+  --color-page-verso: var(--orange-pale);
+  --color-ink: var(--encre);
+  --color-ink-muted: var(--gris);
+  --color-accent-fill: var(--orange-fonce);   /* boutons à texte blanc : 5,2:1 */
+  --color-accent-text: var(--orange-fonce);
+  --color-rule: var(--filet);
 }
 
 * { box-sizing: border-box; }
@@ -40,7 +51,7 @@ p { margin: 0; }
 }
 .marque { font: 700 17px var(--f-voix); text-decoration: none; }
 .marque span { color: var(--orange-fonce); }
-.bandeau-liens { display: flex; gap: 20px; font: 600 12px/1 var(--f-texte); letter-spacing: .08em; text-transform: uppercase; }
+.bandeau-liens { display: flex; align-items: center; flex-wrap: wrap; gap: 14px 20px; font: 600 12px/1 var(--f-texte); letter-spacing: .08em; text-transform: uppercase; }
 .bandeau-liens a { text-decoration: none; padding: 10px 0; }
 .bandeau-liens a:hover { text-decoration: underline; }
 .lien-discret { color: var(--gris); }
@@ -121,8 +132,32 @@ main:focus, main:focus-visible { outline: none; }   /* le focus y est posé à c
 .folio a[rel="next"] { text-align: right; }
 .folio-chap { color: var(--gris); text-align: center; }
 
+/* Provenance, portions, mode cuisine */
+.provenance { font: 400 italic 15px/1.4 var(--f-voix); color: var(--gris); margin-top: -6px; }
+.portions { display: inline-flex; align-items: center; gap: 6px; }
+.portions-btn {
+  width: 44px; height: 44px; border-radius: 50%; border: 1.5px solid var(--encre); background: var(--papier);
+  font: 600 20px/1 var(--f-texte); color: var(--encre); cursor: pointer;
+}
+.portions-btn:hover { background: var(--orange-pale); }
+.mode-cuisine {
+  font: 700 12px/1 var(--f-texte); letter-spacing: .09em; text-transform: uppercase; cursor: pointer;
+  min-height: 44px; padding: 0 18px; border: 1.5px solid var(--encre); border-radius: 999px; background: var(--papier); color: var(--encre);
+}
+.mode-cuisine[aria-pressed="true"] { background: var(--encre); color: var(--papier); }
+.ingr { display: flex; gap: 10px; align-items: baseline; cursor: default; }
+.ingr-coche { display: none; }
+.ou { font: 400 italic 15px var(--f-voix); color: var(--gris); margin: 6px 0 0; }
+.cuisine .ingr { cursor: pointer; }
+.cuisine .ingr-coche { display: inline-block; width: 22px; height: 22px; flex: none; accent-color: var(--orange-fonce); transform: translateY(4px); }
+.cuisine .ingr:has(.ingr-coche:checked) > span { text-decoration: line-through; color: var(--gris); }
+.cuisine .ingredients { font-size: 19px; gap: 12px; }
+.cuisine .etape p { font-size: 20px; line-height: 1.6; }
+.cuisine .etape h3 { font-size: 14px; }
+
 /* Sa feuille, posée sur l'orange comme un objet */
 .page-feuille { background: var(--orange); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px; padding: 44px 36px; min-width: 0; }
+.feuilles { display: flex; flex-direction: column; align-items: center; gap: 28px; width: 100%; }
 .feuille {
   all: unset; cursor: zoom-in; position: relative; display: block; width: 100%; max-width: 460px; background: #fff;
   transform: rotate(-1.6deg);
@@ -135,6 +170,24 @@ main:focus, main:focus-visible { outline: none; }   /* le focus y est posé à c
 .feuille canvas { display: block; width: 100%; height: auto; min-height: 200px; }
 .feuille-loupe { position: absolute; right: 10px; bottom: 10px; font: 700 11px/1 var(--f-texte); letter-spacing: .09em; text-transform: uppercase; background: var(--encre); color: #fff; padding: 9px 12px; border-radius: 999px; }
 .sans-feuille { color: #fff; font: 700 17px/1.5 var(--f-voix); text-align: center; max-width: 30ch; }
+
+/* Refaite par la famille */
+.photos-plat { width: 100%; max-width: 460px; background: var(--papier); padding: 18px 18px 16px; display: grid; gap: 12px; }
+.photos-grille { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+.photos-grille figure { margin: 0; display: grid; gap: 6px; }
+.photos-grille img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
+.photos-grille figcaption { font: 400 13px/1.35 var(--f-texte); color: var(--gris); }
+.photo-retirer { font: 600 12px var(--f-texte); background: none; border: 0; padding: 0; color: var(--orange-fonce); text-decoration: underline; cursor: pointer; }
+.photo-ajout {
+  display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 16px; cursor: pointer;
+  font: 700 12px/1.3 var(--f-texte); letter-spacing: .06em; text-transform: uppercase; text-align: center;
+  background: var(--encre); color: var(--papier); border: 0; border-radius: 999px;
+}
+.photo-ajout:hover { background: var(--orange-fonce); }
+.photo-aide { font-size: 14px; color: var(--gris); }
+.photo-message { font-size: 14px; }
+.photo-message:empty { display: none; }
+.photo-message--err { color: #B42318; font-weight: 600; }
 
 /* La loupe */
 .loupe { position: fixed; inset: 0; background: rgba(22, 22, 22, .92); z-index: 20; overflow: auto; padding: 64px 16px 32px; }
@@ -164,6 +217,8 @@ body.loupe-ouverte { overflow: hidden; }
   .sa-note { order: 7; } .folio { order: 8; grid-template-columns: 1fr 1fr; }
   .folio-chap { grid-column: 1 / -1; grid-row: 1; }
   .recette-titre { --x: 20px; }
+  .photos-plat { order: 6; max-width: none; }
+  .portions-btn { width: 44px; height: 44px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

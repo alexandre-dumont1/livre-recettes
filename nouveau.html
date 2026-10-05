@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,800&family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="contribuer.css">
 <link rel="stylesheet" href="nouveau.css">
 </head>
 <body>
@@ -20,6 +22,8 @@
   <nav class="bandeau-liens" aria-label="Navigation">
     <a href="#/">Toutes les recettes</a>
     <a href="/" class="lien-discret">Ancienne version</a>
+    <button class="bar-btn bar-btn--prim" id="submitBtn" onclick="ouvrirDepot()" aria-haspopup="dialog" aria-label="Proposer une recette" hidden>+ Recette</button>
+    <div class="auth-zone" id="authZone" aria-live="polite"></div>
   </nav>
 </header>
 <main id="contenu" tabindex="-1">
@@ -29,8 +33,10 @@
   <button class="loupe-fermer" id="loupeFermer">Fermer ✕</button>
   <div class="loupe-corps" id="loupeCorps"></div>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
 <script src="titres-manifeste.js"></script>
+<script src="contribuer.js"></script>
 <script src="nouveau.js"></script>
 </body>
 </html>

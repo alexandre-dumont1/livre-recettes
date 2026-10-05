@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Archivo:wght@400;500;600;700&family=Caveat:wght@500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="contribuer.css">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -92,58 +93,8 @@
   </div>
 </div>
 
-<div class="submit-overlay" id="submitOverlay" role="dialog" aria-modal="true" aria-label="Ajouter une recette au livre" onclick="closeSubmitOutside(event)">
-  <div class="submit-panel" id="submitPanel">
-    <div class="submit-panel-header">
-      <div>
-        <div class="submit-panel-title">Ajouter une recette</div>
-        <div class="submit-panel-subtitle">Photographie la fiche, ou dépose son PDF. Rien à recopier.</div>
-      </div>
-      <button class="submit-close" onclick="closeSubmit()" aria-label="Fermer">Fermer ✕</button>
-    </div>
-
-    <div id="depotVue">
-      <div class="depot" id="depotZone">
-        <input type="file" id="depotInput" accept="image/*,application/pdf" multiple hidden onchange="fichiersChoisis(this)">
-        <input type="file" id="depotCamera" accept="image/*" capture="environment" multiple hidden onchange="fichiersChoisis(this)">
-        <p class="depot-titre">Dépose ici la photo ou le PDF de la recette</p>
-        <p class="depot-aide">Plusieurs feuillets pour la même recette ? Ajoute-les tous, ils resteront ensemble.</p>
-        <div class="depot-boutons">
-          <button class="bar-btn bar-btn--prim" onclick="ouvrirSelecteur('depotInput')">Choisir un fichier</button>
-          <button class="bar-btn depot-camera" onclick="ouvrirSelecteur('depotCamera')">Prendre une photo</button>
-        </div>
-        <p class="depot-tech">Photos et PDF, jusqu'à 15 Mo par page.</p>
-      </div>
-
-      <div class="depot-liste" id="depotListe"></div>
-
-      <div id="submitFeedback" class="submit-feedback" aria-live="polite"></div>
-      <button class="submit-form-btn" id="depotEnvoi" onclick="analyserDepot()" hidden>Lire la recette</button>
-    </div>
-
-    <div class="apercu" id="depotApercu" hidden></div>
-
-    <div class="depot-fini" id="depotFini" role="status" tabindex="-1" hidden></div>
-  </div>
-</div>
-
-<!-- Les demandes d'accès. Le lien du livre se partage, donc n'importe qui peut
-     se connecter en Google : la fiche se crée en « pending » et n'ouvre rien.
-     Cette surcouche est le seul endroit où un administrateur approuve, sans
-     passer par le SQL. Elle n'existe que pour lui (voir renderAuth). -->
-<div class="membres-overlay" id="membresOverlay" role="dialog" aria-modal="true"
-     aria-label="Demandes d'accès au livre" onclick="closeMembresOutside(event)">
-  <div class="membres-panel">
-    <div class="membres-panel-header">
-      <div>
-        <div class="membres-panel-title">Qui entre dans le livre</div>
-        <div class="membres-panel-subtitle">Tout le monde peut lire. Une approbation ouvre le droit d'ajouter une recette.</div>
-      </div>
-      <button class="membres-close" onclick="closeMembres()" aria-label="Fermer les demandes d'accès">Fermer ✕</button>
-    </div>
-    <div id="membresCorps" aria-live="polite"></div>
-  </div>
-</div>
+<!-- Les panneaux pour contribuer (dépôt d'une recette, demandes d'accès) sont
+     créés par contribuer.js, partagé avec la nouvelle version du livre. -->
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.js"></script>
@@ -152,6 +103,7 @@
      le livre est un risque qu'on ne prend pas. Voir vendor/README.md. -->
 <script src="vendor/page-flip.browser.js"></script>
 <script src="config.js"></script>
+<script src="contribuer.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
