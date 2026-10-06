@@ -109,7 +109,9 @@ function dessinerMur() {
     // L'index d'un livre : un titre par ligne, points de conduite, numéro de la
     // recette dans le chapitre. Ses titres d'abord ; les fiches imprimées, qui
     // n'ont pas de titre de sa main, suivent en caractères.
-    const ordre = [...vues.filter(r => TITRES[r.id]), ...vues.filter(r => !TITRES[r.id])];
+    // L'ordre des numéros, toujours : un index qui saute de 03 à 05 puis revient
+    // à 04 trahit sa promesse. Ses recettes et les imprimées s'intercalent.
+    const ordre = [...vues].sort((x, y) => toutes.indexOf(x) - toutes.indexOf(y));
     const numero = r => String(toutes.indexOf(r) + 1).padStart(2, '0');
     const nom = NOMS_CHAPITRES[c.id] || c.name || 'Autres';
     return `
@@ -119,8 +121,11 @@ function dessinerMur() {
           <span class="pastille">${q ? `${vues.length} sur ${toutes.length}` : `${toutes.length} recettes`}</span>
         </div>
         <ol class="index" role="list">
-          ${ordre.map(r => `<li><a class="index-ligne${TITRES[r.id] ? '' : ' index-ligne--tape'}" href="#/recette/${encodeURIComponent(r.slug)}">
-            ${TITRES[r.id] ? titreHTML(r, 'mur-img') : `<span class="index-tape">${echapper(r.title)}</span>`}
+          ${ordre.map(r => `<li><a class="index-ligne" href="#/recette/${encodeURIComponent(r.slug)}">
+            <span class="index-titre">
+              ${TITRES[r.id] ? titreHTML(r, 'mur-img') : ''}
+              <span class="index-lecture"${TITRES[r.id] ? ' aria-hidden="true"' : ''}>${echapper(r.title)}</span>
+            </span>
             <span class="index-points" aria-hidden="true"></span>
             <span class="index-num">${numero(r)}</span></a></li>`).join('')}
         </ol>
@@ -143,8 +148,20 @@ function afficherAccueil() {
           <input type="search" id="recherche" placeholder="Chercher une recette, un ingrédient…" value="${echapper(etat.recherche)}" autocomplete="off">
         </label>
       </header>
+      <nav class="sauts" aria-label="Aller à un chapitre">
+        ${etat.chapitres.filter(c => etat.recettes.some(r => r.category_id === c.id)).map(c =>
+          `<button class="saut-chap" data-chap="${c.id}">${echapper((NOMS_CHAPITRES[c.id] || c.name || '').replace(/^(Les|Le) /, ''))}</button>`).join('')}
+      </nav>
       <div class="mur" id="mur">${dessinerMur()}</div>
     </div>`;
+  // Les boutons de chapitre défilent jusqu'au chapitre, sans toucher au #, qui
+  // sert déjà à l'adresse des recettes.
+  document.querySelectorAll('.saut-chap').forEach(b => b.addEventListener('click', () => {
+    const cible = document.getElementById(`chap-${b.dataset.chap}`);
+    if (!cible) return;
+    const barre = document.querySelector('.sauts').offsetHeight;
+    window.scrollTo({ top: cible.getBoundingClientRect().top + window.scrollY - barre - 16, behavior: 'smooth' });
+  }));
   const champ = document.getElementById('recherche');
   champ.addEventListener('input', () => {
     etat.recherche = champ.value.trim();
