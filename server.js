@@ -12,7 +12,7 @@
 // Aucune dépendance : Node suffit largement.
 
 import { createServer } from 'node:http';
-import { readFile } from 'node:fs/promises';
+import { access, readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -30,9 +30,9 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
 // (livre_recettes_1.html, _2) et les maquettes de demos/ ne doivent pas être
 // accessibles publiquement. Pour en exposer une, il faut l'ajouter ici.
 const FICHIERS = {
-  // Depuis le 05/10/2026, l'accueil est la version « façon Whoogy's ».
+  // Depuis le 05/10/2026, l'accueil (/ et /nouveau) est la version « façon
+  // Whoogy's », servie par servirAccueil() qui y pose les balises d'aperçu.
   // L'ancienne (le livre qui tourne) reste à /ancien, et à son ancienne adresse.
-  '/': { file: 'nouveau.html', type: 'text/html; charset=utf-8' },
   '/ancien': { file: 'livre_recettes.html', type: 'text/html; charset=utf-8' },
   '/livre_recettes.html': { file: 'livre_recettes.html', type: 'text/html; charset=utf-8' },
   '/app.js': { file: 'app.js', type: 'text/javascript; charset=utf-8' },
@@ -44,13 +44,22 @@ const FICHIERS = {
   // Bibliothèque tierce figée dans le dépôt, faute d'étape de construction.
   // Provenance, licence et empreinte : vendor/README.md.
   '/vendor/page-flip.browser.js': { file: 'vendor/page-flip.browser.js', type: 'text/javascript; charset=utf-8' },
-  // La version « façon Whoogy's », servie à côté de l'ancienne tant qu'elle
-  // n'est pas validée. Les titres manuscrits (titres/<id>.png) passent par la
-  // route dédiée plus bas, qui n'accepte qu'un nombre.
-  '/nouveau': { file: 'nouveau.html', type: 'text/html; charset=utf-8' },
+  // La version « façon Whoogy's ». Les titres manuscrits (titres/<id>.png)
+  // passent par la route dédiée plus bas, qui n'accepte qu'un nombre.
   '/nouveau.js': { file: 'nouveau.js', type: 'text/javascript; charset=utf-8' },
   '/nouveau.css': { file: 'nouveau.css', type: 'text/css; charset=utf-8' },
   '/titres-manifeste.js': { file: 'titres-manifeste.js', type: 'text/javascript; charset=utf-8' },
+  // Son portrait, sur la première page.
+  '/photos/manou.jpg': { file: 'photos/manou.jpg', type: 'image/jpeg', cache: 'public, max-age=86400' },
+  '/photos/manou-640.jpg': { file: 'photos/manou-640.jpg', type: 'image/jpeg', cache: 'public, max-age=86400' },
+  // Le livre installable sur le téléphone, et lisible sans réseau (sw.js).
+  '/manifest.webmanifest': { file: 'manifest.webmanifest', type: 'application/manifest+json; charset=utf-8' },
+  '/sw.js': { file: 'sw.js', type: 'text/javascript; charset=utf-8' },
+  '/icones/icone-192.png': { file: 'icones/icone-192.png', type: 'image/png', cache: 'public, max-age=604800' },
+  '/icones/icone-512.png': { file: 'icones/icone-512.png', type: 'image/png', cache: 'public, max-age=604800' },
+  '/icones/icone-masque-512.png': { file: 'icones/icone-masque-512.png', type: 'image/png', cache: 'public, max-age=604800' },
+  '/apple-touch-icon.png': { file: 'icones/apple-touch-icon.png', type: 'image/png', cache: 'public, max-age=604800' },
+  '/favicon.png': { file: 'icones/favicon-64.png', type: 'image/png', cache: 'public, max-age=604800' },
 };
 
 // Le HTML n'est jamais mis en cache, sinon une correction de recette peut mettre
@@ -477,6 +486,93 @@ async function transcrire(req, res) {
   }
 }
 
+// ── APERÇUS DE PARTAGE ───────────────────────────────────────────────────────
+// WhatsApp, Messages ou Facebook lisent les balises « og: » d'une page sans
+// exécuter son JavaScript, et sans voir ce qui suit le # d'une adresse. Les
+// recettes du livre vivent derrière ce # (/#/recette/<slug>) : sans aide, tout
+// lien partagé afficherait le même aperçu. Le bouton « Envoyer la recette »
+// partage donc /recette/<slug> : le serveur y répond une petite page qui porte
+// le titre et l'image de la recette, puis renvoie aussitôt le lecteur au livre.
+// Les images (partage/<id>.jpg, 1200 × 630) sont fabriquées hors ligne par
+// scripts/images-partage.mjs ; une recette sans image prend celle du livre.
+
+const NOMS_CHAPITRES = {
+  1: 'Les entrées', 2: 'Les plats', 3: 'Les poissons',
+  4: 'Les desserts', 5: 'Le gibier', 6: 'Les légumes',
+};
+const RECETTES_DUREE_MS = 10 * 60 * 1000;
+let recettesPartage = { quand: 0, liste: [] };
+
+async function recettesPourPartage() {
+  if (Date.now() - recettesPartage.quand < RECETTES_DUREE_MS) return recettesPartage.liste;
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/recipes?select=id,slug,title,category_id,description`, {
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (r.ok) recettesPartage = { quand: Date.now(), liste: await r.json() };
+  } catch (err) {
+    console.error('[partage] liste des recettes illisible :', err.message);
+  }
+  return recettesPartage.liste;
+}
+
+const echapperHtml = t => String(t ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+function origine(req) {
+  const proto = (req.headers['x-forwarded-proto'] || 'http').split(',')[0].trim();
+  return `${proto}://${req.headers['x-forwarded-host'] || req.headers.host}`;
+}
+
+// Les balises d'aperçu, communes à l'accueil et aux recettes.
+function balisesApercu({ titre, description, image, url, type = 'website' }) {
+  return [
+    `<meta property="og:site_name" content="Les recettes de Manou">`,
+    `<meta property="og:type" content="${type}">`,
+    `<meta property="og:title" content="${echapperHtml(titre)}">`,
+    `<meta property="og:description" content="${echapperHtml(description)}">`,
+    `<meta property="og:url" content="${echapperHtml(url)}">`,
+    `<meta property="og:image" content="${echapperHtml(image)}">`,
+    `<meta property="og:image:width" content="1200">`,
+    `<meta property="og:image:height" content="630">`,
+    `<meta property="og:locale" content="fr_FR">`,
+    `<meta name="twitter:card" content="summary_large_image">`,
+    `<meta name="description" content="${echapperHtml(description)}">`,
+  ].join('\n');
+}
+
+const DESCRIPTION_LIVRE = 'Le livre de famille : ses recettes, écrites de sa main.';
+
+async function servirAccueil(req, res) {
+  const html = await readFile(join(ROOT, 'nouveau.html'), 'utf8');
+  const o = origine(req);
+  const balises = balisesApercu({ titre: 'Les recettes de Manou', description: DESCRIPTION_LIVRE, image: `${o}/partage/livre.jpg`, url: `${o}/` });
+  res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache', 'X-Content-Type-Options': 'nosniff' });
+  res.end(html.replace('<!-- APERCU -->', balises));
+}
+
+async function servirPartageRecette(req, res, slug) {
+  const r = (await recettesPourPartage()).find(x => x.slug === slug);
+  const o = origine(req);
+  const cible = r ? `/#/recette/${encodeURIComponent(r.slug)}` : '/';
+  let image = `${o}/partage/livre.jpg`;
+  if (r) {
+    try { await access(join(ROOT, 'partage', `${r.id}.jpg`)); image = `${o}/partage/${r.id}.jpg`; } catch { /* image du livre */ }
+  }
+  const titre = r ? r.title : 'Les recettes de Manou';
+  const chapitre = r ? NOMS_CHAPITRES[r.category_id] : '';
+  const description = r?.description?.trim() || (chapitre ? `${chapitre}, dans le livre de Manou.` : DESCRIPTION_LIVRE);
+  const html = `<!DOCTYPE html>
+<html lang="fr"><head><meta charset="UTF-8">
+<title>${echapperHtml(r ? `${titre} · Les recettes de Manou` : titre)}</title>
+${balisesApercu({ titre, description, image, url: `${o}/recette/${encodeURIComponent(slug)}`, type: 'article' })}
+<meta http-equiv="refresh" content="0; url=${echapperHtml(cible)}">
+<script>location.replace(${JSON.stringify(cible).replace(/</g, '\\u003c')});</script>
+</head><body><p><a href="${echapperHtml(cible)}">Ouvrir la recette</a></p></body></html>`;
+  res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache', 'X-Content-Type-Options': 'nosniff' });
+  res.end(html);
+}
+
 const server = createServer(async (req, res) => {
   const chemin = new URL(req.url, `http://${req.headers.host}`).pathname;
 
@@ -503,6 +599,19 @@ const server = createServer(async (req, res) => {
     return res.end(configJs());
   }
 
+  if (chemin === '/' || chemin === '/nouveau') {
+    try { return await servirAccueil(req, res); } catch (err) {
+      console.error('Accueil illisible :', err.message);
+      res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
+      return res.end('Erreur serveur');
+    }
+  }
+  const partage = chemin.match(/^\/recette\/([^/]{1,200})$/);
+  if (partage) {
+    let slug; try { slug = decodeURIComponent(partage[1]); } catch { slug = ''; }
+    return servirPartageRecette(req, res, slug);
+  }
+
   // Un titre découpé sur sa feuille. Seul un identifiant numérique passe : pas
   // de « ../ » possible, donc rien d'autre du disque n'est lisible par ici.
   // Ces images ne changent pas : on les garde en cache une semaine.
@@ -510,8 +619,11 @@ const server = createServer(async (req, res) => {
   // Maquettes de comparaison, servies seulement en local (jamais sur Railway :
   // demos/ y est exclu par .railwayignore, la lecture échoue en 404).
   const vignette = chemin.match(/^\/idees\/feuilles\/(\d{1,5})\.jpg$/);
+  // L'image d'aperçu d'une recette (ou du livre), même garde : un nombre ou « livre ».
+  const apercu = chemin.match(/^\/partage\/(\d{1,5}|livre)\.jpg$/);
   const cible = titre
     ? { file: `titres/${titre[1]}.png`, type: 'image/png', cache: 'public, max-age=604800' }
+    : apercu ? { file: `partage/${apercu[1]}.jpg`, type: 'image/jpeg', cache: 'public, max-age=86400' }
     : vignette ? { file: `demos/apercus/mur-variantes/feuilles/${vignette[1]}.jpg`, type: 'image/jpeg' }
     : chemin === '/idees' ? { file: 'demos/apercus/mur-variantes/index.html', type: 'text/html; charset=utf-8' }
     : FICHIERS[chemin];
@@ -529,7 +641,7 @@ const server = createServer(async (req, res) => {
     });
     res.end(contenu);
   } catch (err) {
-    if ((titre || vignette || chemin === '/idees') && err.code === 'ENOENT') {
+    if ((titre || vignette || apercu || chemin === '/idees') && err.code === 'ENOENT') {
       res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
       return res.end('Titre introuvable');
     }
