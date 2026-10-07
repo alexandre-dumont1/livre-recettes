@@ -7,7 +7,8 @@ pour tous, qu'ils aient été écrits au feutre ou au crayon pâle.
 
 Travaille sur titres/*.png tout juste sortis de decouper-titres.py : NE PAS le
 relancer seul sur des titres déjà encrés (il épaissirait une seconde fois).
-Toujours : decouper-titres.py, puis encrer-titres.py, puis mesurer-titres.py.
+Toujours : decouper-titres.py, puis encrer-titres.py, puis retoucher-titres.py,
+puis mesurer-titres.py.
 
 Usage : ~/one-dm-manou/.venv/bin/python scripts/encrer-titres.py
 """

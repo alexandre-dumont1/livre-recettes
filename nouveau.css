@@ -69,7 +69,19 @@ main:focus, main:focus-visible { outline: none; }   /* le focus y est posé à c
 
 /* ── Accueil : le mur de ses titres ─────────────────── */
 .accueil { max-width: 1120px; margin: 0 auto; }
-.accueil-tete { display: grid; justify-items: center; gap: 14px; text-align: center; padding: 56px 0 40px; }
+/* La première page : son portrait, tiré en noir et blanc et posé de travers sur
+   l'orange, comme ses feuilles sur la page d'une recette. */
+.accueil-tete {
+  display: grid; grid-template-columns: 300px minmax(0, 1fr); align-items: center; gap: 56px;
+  max-width: 940px; margin: 0 auto; padding: 56px 0 44px;
+}
+.portrait { margin: 0; background: var(--orange); padding: 30px 26px 34px; }
+.portrait img {
+  display: block; width: 100%; height: auto; background: #fff; padding: 9px 9px 30px;
+  transform: rotate(-2deg);
+  box-shadow: 0 18px 30px -14px rgba(60, 20, 0, .55), 0 2px 4px rgba(60, 20, 0, .2);
+}
+.accueil-texte { display: grid; justify-items: start; gap: 14px; }
 .sur-titre { font: 600 12px var(--f-texte); letter-spacing: .1em; text-transform: uppercase; color: var(--gris); }
 .accueil-titre { font: 800 clamp(40px, 7vw, 76px)/1 var(--f-voix); letter-spacing: -.02em; }
 .accueil-chapeau { font: 700 17px/1.5 var(--f-voix); max-width: 44ch; }
@@ -93,6 +105,20 @@ main:focus, main:focus-visible { outline: none; }   /* le focus y est posé à c
   min-height: 36px; padding: 0 14px; border: 1.5px solid var(--encre); border-radius: 999px; background: var(--papier); color: var(--encre);
 }
 .saut-chap:hover { background: var(--orange-pale); }
+
+/* Dernièrement en cuisine : les photos « J'ai refait ce plat » */
+.recentes { margin: 0 auto 36px; max-width: 1040px; }
+.recentes[hidden] { display: none; }
+.recentes-titre { font: 700 21px var(--f-voix); text-align: center; margin-bottom: 18px; }
+/* Centrée, quel que soit le nombre de photos (une seule au début). */
+.recentes-liste { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 18px; }
+.recentes-liste > li { width: 160px; }
+.recente { display: grid; gap: 6px; text-decoration: none; }
+.recente img { width: 100%; height: auto; aspect-ratio: 1; object-fit: cover; display: block; transition: transform .2s ease; }
+.recente:hover img { transform: rotate(-1.2deg); }
+.recente-titre { font: 700 15px/1.3 var(--f-voix); }
+.recente:hover .recente-titre { text-decoration: underline; }
+.recente-legende { font: 400 13px/1.35 var(--f-texte); color: var(--gris); }
 
 /* L'index du livre : un titre par ligne, des points de conduite, le numéro de
    la recette dans le chapitre. Deux colonnes sur grand écran. */
@@ -127,6 +153,7 @@ main:focus, main:focus-visible { outline: none; }   /* le focus y est posé à c
 .recette-img { display: block; width: auto; height: calc(var(--k) * var(--x)); max-width: min(100%, 600px); object-fit: contain; }
 .titre-tape { font: 800 clamp(30px, 4vw, 44px)/1.08 var(--f-voix); text-align: center; letter-spacing: -.01em; }
 .mur-img-tape { font-size: 22px; }
+.hors-ligne { max-width: 48ch; text-align: center; font-size: 15px; background: var(--orange-pale); padding: 12px 16px; }
 .pastilles { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px 16px; }
 .chapeau { font: 700 17px/1.5 var(--f-voix); text-align: center; max-width: 48ch; text-wrap: balance; }
 
@@ -162,6 +189,9 @@ main:focus, main:focus-visible { outline: none; }   /* le focus y est posé à c
   font: 700 12px/1 var(--f-texte); letter-spacing: .09em; text-transform: uppercase; cursor: pointer;
   min-height: 44px; padding: 0 18px; border: 1.5px solid var(--encre); border-radius: 999px; background: var(--papier); color: var(--encre);
 }
+.actions-recette { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.envoi-message { font-size: 14px; color: var(--gris); text-align: center; overflow-wrap: anywhere; }
+.envoi-message:empty { display: none; }
 .mode-cuisine[aria-pressed="true"] { background: var(--encre); color: var(--papier); }
 .ingr { display: flex; gap: 10px; align-items: baseline; cursor: default; }
 .ingr-coche { display: none; }
@@ -221,7 +251,12 @@ body.loupe-ouverte { overflow: hidden; }
   .bandeau { padding: 10px 16px 10px calc(16px + var(--tranche)); }
   .bandeau-liens { gap: 14px; }
   main { padding: 0 16px 60px calc(16px + var(--tranche)); }
-  .accueil-tete { padding: 36px 0 28px; }
+  .accueil-tete { grid-template-columns: 1fr; justify-items: center; gap: 30px; padding: 30px 0 28px; }
+  .portrait { width: 230px; padding: 20px 18px 24px; }
+  .recentes-liste { gap: 12px; }
+  .recentes-liste > li { width: calc((100% - 24px) / 3); }
+  .recente-titre { font-size: 14px; }
+  .accueil-texte { justify-items: center; text-align: center; }
   .mur { gap: 40px; }
   .index { --x: 10px; }
   .index .mur-img { max-height: 46px; }
@@ -233,7 +268,8 @@ body.loupe-ouverte { overflow: hidden; }
   /* Sur téléphone, sa feuille vient juste après le chapeau, avant la liste */
   .double { display: flex; flex-direction: column; align-items: center; }
   .page-feuille { order: 5; width: calc(100% + 32px); margin: 4px -16px 18px; padding: 28px 22px; }
-  .rubrique { order: 1; } .recette-titre { order: 2; } .pastilles { order: 3; } .chapeau { order: 4; }
+  .rubrique { order: 1; } .recette-titre, .provenance, .hors-ligne { order: 2; } .pastilles { order: 3; }
+  .chapeau, .actions-recette, .envoi-message { order: 4; }
   .colonnes { order: 6; grid-template-columns: 1fr; gap: 24px; }
   .sa-note { order: 7; } .folio { order: 8; grid-template-columns: 1fr 1fr; }
   .folio-chap { grid-column: 1 / -1; grid-row: 1; }

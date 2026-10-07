@@ -140,14 +140,21 @@ function afficherAccueil() {
   main().innerHTML = `
     <div class="accueil">
       <header class="accueil-tete">
-        <p class="sur-titre">Le livre de famille</p>
-        <h1 class="accueil-titre">Les recettes de Manou</h1>
-        <p class="accueil-chapeau">${etat.recettes.length} recettes, dont ${nbMain} écrites de sa main. Chaque titre ouvre sa recette, avec sa feuille à côté.</p>
-        <label class="recherche">
-          <span class="sr-only">Chercher une recette ou un ingrédient</span>
-          <input type="search" id="recherche" placeholder="Chercher une recette, un ingrédient…" value="${echapper(etat.recherche)}" autocomplete="off">
-        </label>
+        <figure class="portrait">
+          <img src="photos/manou.jpg" srcset="photos/manou-640.jpg 640w, photos/manou.jpg 960w"
+            sizes="(max-width: 860px) 230px, 300px" width="960" height="1197" alt="Manou, un verre à la main, en terrasse">
+        </figure>
+        <div class="accueil-texte">
+          <p class="sur-titre">Le livre de famille</p>
+          <h1 class="accueil-titre">Les recettes de Manou</h1>
+          <p class="accueil-chapeau">${etat.recettes.length} recettes, dont ${nbMain} écrites de sa main. Chaque titre ouvre sa recette, avec sa feuille à côté.</p>
+          <label class="recherche">
+            <span class="sr-only">Chercher une recette ou un ingrédient</span>
+            <input type="search" id="recherche" placeholder="Chercher une recette, un ingrédient…" value="${echapper(etat.recherche)}" autocomplete="off">
+          </label>
+        </div>
       </header>
+      <section class="recentes" id="recentes" aria-labelledby="titreRecentes" hidden></section>
       <nav class="sauts" aria-label="Aller à un chapitre">
         ${etat.chapitres.filter(c => etat.recettes.some(r => r.category_id === c.id)).map(c =>
           `<button class="saut-chap" data-chap="${c.id}">${echapper((NOMS_CHAPITRES[c.id] || c.name || '').replace(/^(Les|Le) /, ''))}</button>`).join('')}
@@ -162,11 +169,35 @@ function afficherAccueil() {
     const barre = document.querySelector('.sauts').offsetHeight;
     window.scrollTo({ top: cible.getBoundingClientRect().top + window.scrollY - barre - 16, behavior: 'smooth' });
   }));
+  dessinerRecentes();
   const champ = document.getElementById('recherche');
   champ.addEventListener('input', () => {
     etat.recherche = champ.value.trim();
     document.getElementById('mur').innerHTML = dessinerMur();
   });
+}
+
+// Dernièrement en cuisine : les dernières photos « J'ai refait ce plat ». La
+// bande n'apparaît qu'à partir d'une photo, et ne retarde jamais l'index.
+const CLE_RECENTES = 'recipe_documents?select=id,public_url,caption,created_at,recipe_document_links(recipe_id)&kind=eq.dish_photo&order=created_at.desc&limit=12';
+
+async function dessinerRecentes() {
+  const docs = await sb(CLE_RECENTES).catch(() => []);
+  const vues = docs
+    .map(d => ({ ...d, recette: etat.recettes.find(r => r.id === d.recipe_document_links?.[0]?.recipe_id) }))
+    .filter(d => d.recette).slice(0, 6);
+  const zone = document.getElementById('recentes');
+  if (!zone || !vues.length) return;
+  zone.innerHTML = `
+    <h2 class="recentes-titre" id="titreRecentes">Dernièrement en cuisine</h2>
+    <ul class="recentes-liste" role="list">${vues.map(d => `
+      <li><a class="recente" href="#/recette/${encodeURIComponent(d.recette.slug)}">
+        <img src="${echapper(d.public_url)}" alt="" loading="lazy" width="300" height="300">
+        <span class="recente-titre">${echapper(d.recette.title)}</span>
+        ${d.caption ? `<span class="recente-legende">${echapper(d.caption)}</span>` : ''}
+      </a></li>`).join('')}
+    </ul>`;
+  zone.hidden = false;
 }
 
 // ── UNE RECETTE ──────────────────────────────────────────────────────────────
@@ -278,11 +309,16 @@ async function afficherRecette(slug) {
   main().innerHTML = `<p class="chargement">Chargement…</p>`;
 
   const cleDocs = `recipe_document_links?select=display_order,page_label,recipe_documents(id,kind,public_url,caption,uploaded_by,object_path)&recipe_id=eq.${r.id}&order=display_order`;
+  // Sans réseau, seules les recettes déjà ouvertes sur ce téléphone sont gardées
+  // (sw.js) : pour les autres, on le dit plutôt que d'afficher une page vide.
+  let manquante = false;
+  const ou = () => { manquante = true; return []; };
   const [ingrs, etapes, docs] = await Promise.all([
-    sb(`recipe_ingredients?select=*,ingredients(name)&recipe_id=eq.${r.id}&order=display_order`).catch(() => []),
-    sb(`recipe_steps?select=*&recipe_id=eq.${r.id}&order=step_number`).catch(() => []),
-    sb(cleDocs).catch(() => []),
+    sb(`recipe_ingredients?select=*,ingredients(name)&recipe_id=eq.${r.id}&order=display_order`).catch(ou),
+    sb(`recipe_steps?select=*&recipe_id=eq.${r.id}&order=step_number`).catch(ou),
+    sb(cleDocs).catch(ou),
   ]);
+  const horsLigne = manquante && !navigator.onLine;
   const feuilles = docs.map(d => d.recipe_documents).filter(d => d?.kind === 'manuscript' && /\.pdf$/i.test(d.public_url));
   const photos = docs.map(d => d.recipe_documents).filter(d => d?.kind === 'dish_photo');
   const variantes = !!r.groups_are_variants;
@@ -299,14 +335,19 @@ async function afficherRecette(slug) {
       <div class="page-texte">
         <a class="rubrique" href="#/">${echapper(chap)}</a>
         <h1 class="recette-titre">${titreHTML(r, 'recette-img')}</h1>
+        ${horsLigne ? `<p class="hors-ligne">Pas de réseau, et cette recette n'a jamais été ouverte sur cet appareil. Elle s'affichera en entier dès le retour de la connexion, puis restera lisible hors ligne.</p>` : ''}
         ${prov ? `<p class="provenance">${echapper(prov)}</p>` : ''}
         <div class="pastilles">${pastilles(r)}</div>
         ${r.description ? `<p class="chapeau">${echapper(r.description)}</p>` : ''}
-        <button class="mode-cuisine" id="modeCuisine" aria-pressed="false">Mode cuisine</button>
+        <div class="actions-recette">
+          <button class="mode-cuisine" id="modeCuisine" aria-pressed="false">Mode cuisine</button>
+          <button class="mode-cuisine" id="envoyer">Envoyer la recette</button>
+        </div>
+        <p class="envoi-message" id="envoiMessage" aria-live="polite"></p>
         <div class="colonnes">
           <div class="col-ingr">
             <h2 class="col-titre">Ingrédients</h2>
-            ${ingrs.length ? blocIngredients(ingrs, variantes) : '<p class="prep">Pas de liste : tout est sur sa feuille.</p>'}
+            ${ingrs.length ? blocIngredients(ingrs, variantes) : horsLigne ? '' : '<p class="prep">Pas de liste : tout est sur sa feuille.</p>'}
           </div>
           <div class="col-etapes">${etapes.length ? blocEtapes(etapes) : ''}</div>
         </div>
@@ -319,7 +360,7 @@ async function afficherRecette(slug) {
       </div>
       <div class="page-feuille">
         <div class="feuilles" id="feuilles">
-          ${feuilles.length ? '' : `<p class="sans-feuille">Cette recette vient d'un livre ou d'un magazine : pas de feuille de sa main.</p>`}
+          ${feuilles.length || horsLigne ? '' : `<p class="sans-feuille">Cette recette vient d'un livre ou d'un magazine : pas de feuille de sa main.</p>`}
         </div>
         ${blocPhotos(r, photos)}
       </div>
@@ -350,6 +391,9 @@ function brancherRecette(r, cleDocs, slug) {
   const bouton = document.getElementById('modeCuisine');
   bouton.addEventListener('click', () => basculerCuisine(bouton));
 
+  // Envoyer : le lien /recette/<slug>, que WhatsApp montre avec son titre.
+  document.getElementById('envoyer').addEventListener('click', () => envoyerRecette(r));
+
   // Photo du plat refait.
   document.getElementById('photoPlat')?.addEventListener('change', async e => {
     const f = e.target.files[0]; if (!f) return;
@@ -357,7 +401,7 @@ function brancherRecette(r, cleDocs, slug) {
     msg.textContent = 'Envoi de la photo…'; msg.className = 'photo-message';
     try {
       await ajouterPhotoDuPlat(r.id, f);
-      delete cache[cleDocs];
+      delete cache[cleDocs]; delete cache[CLE_RECENTES];
       await afficherRecette(slug);
       document.getElementById('photoMessage').textContent = 'Merci ! Ta photo est dans le livre.';
     } catch (err) {
@@ -368,10 +412,28 @@ function brancherRecette(r, cleDocs, slug) {
     const msg = document.getElementById('photoMessage');
     try {
       await retirerPhotoDuPlat(b.dataset.id, b.dataset.chemin);
-      delete cache[cleDocs];
+      delete cache[cleDocs]; delete cache[CLE_RECENTES];
       await afficherRecette(slug);
     } catch (err) { msg.textContent = err.message; msg.className = 'photo-message photo-message--err'; }
   }));
+}
+
+// Le partage du téléphone (WhatsApp, Messages…) quand il existe, sinon le lien
+// copié. Jamais l'adresse avec # : les aperçus ne lisent pas ce qui suit le #.
+async function envoyerRecette(r) {
+  const url = `${location.origin}/recette/${encodeURIComponent(r.slug)}`;
+  const msg = document.getElementById('envoiMessage');
+  if (navigator.share) {
+    try { await navigator.share({ title: r.title, text: `${r.title}, dans le livre de Manou`, url }); }
+    catch { /* partage annulé : rien à dire */ }
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(url);
+    msg.textContent = 'Lien copié : colle-le dans WhatsApp ou un message.';
+  } catch {
+    msg.textContent = `Copie ce lien : ${url}`;
+  }
 }
 
 let verrouEcran = null;
@@ -441,7 +503,8 @@ async function poserFeuilles(zone, url) {
       await dessinerPage(b.querySelector('canvas'), await doc.getPage(p), b.clientWidth || 420);
     }
   } catch (e) {
-    zone.appendChild(Object.assign(document.createElement('p'), { className: 'sans-feuille', textContent: "Sa feuille n'a pas pu être chargée." }));
+    zone.appendChild(Object.assign(document.createElement('p'), { className: 'sans-feuille',
+      textContent: navigator.onLine ? "Sa feuille n'a pas pu être chargée." : "Pas de réseau : sa feuille s'affichera au retour de la connexion." }));
   }
 }
 
@@ -535,6 +598,12 @@ function router() {
   const m = location.hash.match(/^#\/recette\/(.+)$/);
   if (m) afficherRecette(decodeURIComponent(m[1]));
   else afficherAccueil();
+}
+
+// Le livre s'installe sur l'écran d'accueil du téléphone et reste lisible sans
+// réseau (voir sw.js). En local sur http://localhost aussi, pour pouvoir tester.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
 }
 
 (async () => {
