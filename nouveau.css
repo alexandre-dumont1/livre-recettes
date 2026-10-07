@@ -56,6 +56,16 @@ p { margin: 0; }
 .bandeau-liens a:hover { text-decoration: underline; }
 .lien-discret { color: var(--gris); }
 
+/* La connexion, aux couleurs du livre (contribuer.css la dessine en carré). */
+.bandeau .auth-btn {
+  border: 1.5px solid var(--encre); border-radius: 999px; color: var(--encre);
+  min-height: 40px; padding: 0 16px; font: 600 12px/1 var(--f-texte); letter-spacing: .08em;
+}
+.bandeau .auth-btn:hover { background: var(--orange-pale); border-color: var(--encre); }
+
+.pied { padding: 0 24px 40px calc(24px + var(--tranche)); text-align: center; font-size: 14px; }
+.pied a { color: var(--gris); }
+
 main { padding: 0 24px 80px calc(24px + var(--tranche)); outline: none; }
 main:focus, main:focus-visible { outline: none; }   /* le focus y est posé à chaque page, pas par le lecteur */
 .chargement, .vide { padding: 60px 0; text-align: center; color: var(--gris); }
@@ -165,7 +175,43 @@ main:focus, main:focus-visible { outline: none; }   /* le focus y est posé à c
 .prep { color: var(--gris); }
 .col-etapes { display: grid; gap: 18px; }
 .etape h3 { font: 700 12px/1.3 var(--f-texte); letter-spacing: .09em; text-transform: uppercase; margin-bottom: 6px; }
+.reperes { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-left: 6px; vertical-align: middle; }
 .repere { font-weight: 600; color: var(--gris); letter-spacing: .04em; text-transform: none; }
+/* La durée d'une étape : un bouton qui lance le minuteur. */
+.minuteur-lancer {
+  display: inline-flex; align-items: center; gap: 5px; cursor: pointer;
+  font: 700 12px/1 var(--f-texte); letter-spacing: .04em; color: var(--orange-fonce);
+  background: var(--orange-pale); border: 1.5px solid var(--orange-fonce); border-radius: 999px;
+  min-height: 32px; padding: 0 11px;
+}
+@media (hover: hover) { .minuteur-lancer:hover { background: var(--orange-fonce); color: #fff; } }
+.minuteur-lancer:active { background: var(--orange-fonce); color: #fff; }
+.icone-minuteur { width: 15px; height: 15px; flex: none; }
+
+/* La barre des minuteurs, en bas de l'écran, sur toutes les pages. */
+.minuteurs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 15; display: grid; gap: 1px; background: var(--encre);
+  padding-bottom: env(safe-area-inset-bottom); box-shadow: 0 -10px 24px -16px rgba(0, 0, 0, .5); }
+.minuteurs[hidden] { display: none; }
+body.avec-minuteurs main { padding-bottom: 180px; }
+.minuteur {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; align-items: center; gap: 10px;
+  padding: 8px 16px 8px calc(16px + var(--tranche)); color: var(--encre);
+  background: linear-gradient(90deg, var(--orange-pale) calc(var(--fait) * 100%), var(--papier) 0);
+}
+.minuteur-nom { display: grid; text-decoration: none; min-width: 0; }
+.minuteur-nom strong { font: 700 14px/1.25 var(--f-texte); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.minuteur-nom span { font: 400 12.5px/1.3 var(--f-texte); color: var(--gris); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.minuteur-temps { font: 800 22px/1 var(--f-voix); font-variant-numeric: tabular-nums; min-width: 4.2ch; text-align: right; }
+.minuteur-btn {
+  font: 700 12px/1 var(--f-texte); letter-spacing: .04em; cursor: pointer; min-height: 44px; min-width: 44px; padding: 0 10px;
+  background: var(--papier); color: var(--encre); border: 1.5px solid var(--encre); border-radius: 999px;
+}
+.minuteur-btn:hover { background: var(--orange-pale); }
+/* Blanc sur orange foncé (5,2:1) qui clignote avec le noir : lisible d'un coup d'œil. */
+.minuteur--fini { background: var(--orange-fonce); color: #fff; animation: sonne 1s steps(2, jump-none) infinite; }
+.minuteur--fini .minuteur-nom span { color: #fff; }
+.minuteur--fini .minuteur-temps { font-size: 18px; }
+@keyframes sonne { 50% { background: var(--encre); } }
 .etape p { font-size: 16px; line-height: 1.6; padding-left: 14px; position: relative; max-width: 62ch; }
 .etape p::before { content: ""; position: absolute; left: 0; top: .62em; width: 6px; height: 6px; border-radius: 50%; background: var(--orange); }
 .sa-note { width: 100%; border-top: 1px solid var(--filet); padding-top: 16px; text-align: left; }
@@ -216,6 +262,7 @@ main:focus, main:focus-visible { outline: none; }   /* le focus y est posé à c
 .feuille:hover { transform: rotate(0) scale(1.01); }
 .feuille:focus-visible { outline: 3px solid #fff; outline-offset: 6px; }
 .feuille canvas { display: block; width: 100%; height: auto; min-height: 200px; }
+.feuille img { display: block; width: 100%; height: auto; }
 .feuille-loupe { position: absolute; right: 10px; bottom: 10px; font: 700 11px/1 var(--f-texte); letter-spacing: .09em; text-transform: uppercase; background: var(--encre); color: #fff; padding: 9px 12px; border-radius: 999px; }
 .sans-feuille { color: #fff; font: 700 17px/1.5 var(--f-voix); text-align: center; max-width: 30ch; }
 
@@ -241,15 +288,22 @@ main:focus, main:focus-visible { outline: none; }   /* le focus y est posé à c
 .loupe { position: fixed; inset: 0; background: rgba(22, 22, 22, .92); z-index: 20; overflow: auto; padding: 64px 16px 32px; }
 .loupe[hidden] { display: none; }
 .loupe-corps { display: flex; justify-content: center; }
-.loupe-corps canvas { display: block; width: min(100%, 1100px); height: auto; background: #fff; }
+.loupe-corps canvas, .loupe-corps img { display: block; width: min(100%, 1100px); height: auto; background: #fff; }
 .loupe-fermer { position: fixed; top: 14px; right: 16px; font: 700 12px/1 var(--f-texte); letter-spacing: .08em; text-transform: uppercase; background: #fff; color: var(--encre); border: 0; border-radius: 999px; padding: 13px 18px; cursor: pointer; }
 body.loupe-ouverte { overflow: hidden; }
 
 /* ── Téléphone ──────────────────────────────────────── */
 @media (max-width: 860px) {
   :root { --tranche: 5px; }
-  .bandeau { padding: 10px 16px 10px calc(16px + var(--tranche)); }
-  .bandeau-liens { gap: 14px; }
+  /* Une seule ligne : le nom du livre (qui ramène à l'accueil) et la connexion.
+     « Toutes les recettes » ferait doublon ; l'ancienne version est en bas de page. */
+  .bandeau { padding: 8px 12px 8px calc(14px + var(--tranche)); flex-wrap: nowrap; gap: 10px; }
+  .marque { font-size: 16px; white-space: nowrap; }
+  .bandeau-liens { gap: 8px; flex-wrap: nowrap; }
+  .lien-large { display: none; }
+  .bandeau .auth-name, .bandeau .auth-state { display: none; }
+  .bandeau .bar-btn { min-height: 40px; padding: 0 12px; }
+  .bandeau .auth-btn { padding: 0 14px; }
   main { padding: 0 16px 60px calc(16px + var(--tranche)); }
   .accueil-tete { grid-template-columns: 1fr; justify-items: center; gap: 30px; padding: 30px 0 28px; }
   .portrait { width: 230px; padding: 20px 18px 24px; }
@@ -276,6 +330,12 @@ body.loupe-ouverte { overflow: hidden; }
   .recette-titre { --x: 20px; }
   .photos-plat { order: 6; max-width: none; }
   .portions-btn { width: 44px; height: 44px; }
+}
+
+@media (max-width: 520px) {
+  .minuteur { padding-left: calc(12px + var(--tranche)); padding-right: 10px; gap: 6px; }
+  .minuteur-temps { font-size: 19px; }
+  .minuteur-btn { padding: 0 8px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

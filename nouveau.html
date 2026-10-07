@@ -28,8 +28,8 @@
 <header class="bandeau">
   <a class="marque" href="#/">Les recettes de <span>Manou</span></a>
   <nav class="bandeau-liens" aria-label="Navigation">
-    <a href="#/">Toutes les recettes</a>
-    <a href="/ancien" class="lien-discret">Ancienne version</a>
+    <a href="#/" class="lien-large">Toutes les recettes</a>
+    <a href="/ancien" class="lien-discret lien-large">Ancienne version</a>
     <button class="bar-btn bar-btn--prim" id="submitBtn" onclick="ouvrirDepot()" aria-haspopup="dialog" aria-label="Proposer une recette" hidden>+ Recette</button>
     <div class="auth-zone" id="authZone" aria-live="polite"></div>
   </nav>
@@ -37,6 +37,9 @@
 <main id="contenu" tabindex="-1">
   <p class="chargement">Chargement…</p>
 </main>
+<footer class="pied">
+  <a href="/ancien">L'ancienne version du livre</a>
+</footer>
 <div class="loupe" id="loupe" role="dialog" aria-modal="true" aria-label="Sa feuille, en grand" hidden>
   <button class="loupe-fermer" id="loupeFermer">Fermer ✕</button>
   <div class="loupe-corps" id="loupeCorps"></div>
@@ -44,6 +47,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.js"></script>
 <script src="/config.js"></script>
 <script src="titres-manifeste.js"></script>
+<script src="feuilles-manifeste.js"></script>
 <script src="contribuer.js"></script>
 <script src="nouveau.js"></script>
 </body>

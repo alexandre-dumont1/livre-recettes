@@ -6,12 +6,19 @@ L'affichage met tous les titres à la même hauteur d'x et les pose sur la
 même ligne d'écriture. Le soulignement est retiré de la mesure : c'est un trait
 horizontal, il fausserait la ligne de base.
 
-Usage : ~/one-dm-manou/.venv/bin/python scripts/mesurer-titres.py
-Écrit titres-manifeste.js : id → [largeur, hauteur, hauteur_x, ligne_de_base].
-"""
-import cv2, numpy as np, json, os
+Mesure sur les découpes à 200 dpi (scripts/titres-200/), là où les mesures à
+l'œil ont été prises, puis décrit l'image servie (titres/<id>.png), affinée ×3 par
+affiner-titres.py : toutes les dimensions sont multipliées par le même facteur.
 
-dossier = 'titres'
+Usage : ~/one-dm-manou/.venv/bin/python scripts/mesurer-titres.py
+Écrit titres-manifeste.js : id → [largeur, hauteur, hauteur_x, ligne_de_base, empreinte].
+"""
+import cv2, numpy as np, json, os, importlib.util
+
+dossier = 'scripts/titres-200'
+_spec = importlib.util.spec_from_file_location('affiner', 'scripts/affiner-titres.py')
+_aff = importlib.util.module_from_spec(_spec); _spec.loader.exec_module(_aff)
+F = _aff.FACTEUR
 oeil = json.load(open('scripts/titres-mesures.json'))   # écrit par decouper-titres.py
 res = {}
 for f in sorted(os.listdir(dossier), key=lambda x: int(x.split('.')[0])):
@@ -54,11 +61,13 @@ for f in sorted(os.listdir(dossier), key=lambda x: int(x.split('.')[0])):
     # Empreinte du fichier : ajoutée à l'adresse de l'image (?v=…), pour qu'un
     # navigateur qui a gardé l'ancienne découpe en cache prenne la nouvelle.
     import hashlib
-    v = hashlib.md5(open(f'{dossier}/{f}', 'rb').read()).hexdigest()[:8]
-    res[i] = [w, h, max(hx, 4), base, v]
+    v = hashlib.md5(open(f'titres/{f}', 'rb').read()).hexdigest()[:8]
+    sert = cv2.imread(f'titres/{f}', cv2.IMREAD_GRAYSCALE).shape
+    assert sert[:2] == (h * F, w * F), f'titres/{f} ne correspond pas : relancer affiner-titres.py'
+    res[i] = [w * F, h * F, max(hx, 4) * F, base * F, v]
 
 open('titres-manifeste.js', 'w').write(
-    "// Généré par scripts/mesurer-titres.py depuis titres/*.png.\n"
+    "// Généré par scripts/mesurer-titres.py (mesures sur scripts/titres-200/, images titres/*.png).\n"
     "// id de recette → [largeur, hauteur, hauteur d'x, ligne de base, empreinte] du titre\n"
     "// manuscrit, en pixels de l'image. Sert à les mettre tous à la même taille\n"
     "// de lettres et sur la même ligne d'écriture.\n"

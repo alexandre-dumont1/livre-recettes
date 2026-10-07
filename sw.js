@@ -13,10 +13,10 @@
 // change jamais (un titre versionné, une feuille, une police) se sert de la
 // copie directement.
 
-const VERSION = 'livre-v1';
+const VERSION = 'livre-v2';
 const SOCLE = [
   '/', '/nouveau.js', '/nouveau.css', '/tokens.css', '/contribuer.js', '/contribuer.css',
-  '/titres-manifeste.js', '/config.js', '/photos/manou-640.jpg', '/photos/manou.jpg',
+  '/titres-manifeste.js', '/feuilles-manifeste.js', '/config.js', '/photos/manou-640.jpg', '/photos/manou.jpg',
 ];
 
 self.addEventListener('install', e => {
@@ -70,7 +70,7 @@ self.addEventListener('fetch', e => {
 
   if (url.origin === location.origin) {
     if (url.pathname.startsWith('/api/') || url.pathname === '/sw.js') return;
-    if (/^\/(titres|partage|icones)\//.test(url.pathname)) { e.respondWith(copieDabord(req)); return; }
+    if (/^\/(titres|partage|icones|feuilles)\//.test(url.pathname)) { e.respondWith(copieDabord(req)); return; }
     e.respondWith(reseauDabord(req));
     return;
   }

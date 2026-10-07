@@ -53,9 +53,9 @@ function carteRecette(r, dim) {
   let titre;
   if (dim) {
     const [w, h, hx] = dim;
-    // Au-delà de 1,6 fois sa taille, un petit titre découpé devient pixelisé :
-    // mieux vaut un titre un peu plus petit et net.
-    const s = Math.min(50 / hx, 660 / w, 330 / h, 1.6);
+    // Les titres sont servis affinés ×3 (scripts/affiner-titres.py) : ils
+    // restent nets à cette taille, même les plus petits.
+    const s = Math.min(50 / hx, 660 / w, 330 / h);
     titre = `<img class="main" src="titres/${r.id}.png?v=${dim[4]}" style="width:${Math.round(w * s)}px;height:${Math.round(h * s)}px" alt="">`;
   } else {
     titre = `<h1 class="tape">${echapper(r.title)}</h1>`;

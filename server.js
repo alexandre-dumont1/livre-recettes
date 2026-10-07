@@ -49,6 +49,7 @@ const FICHIERS = {
   '/nouveau.js': { file: 'nouveau.js', type: 'text/javascript; charset=utf-8' },
   '/nouveau.css': { file: 'nouveau.css', type: 'text/css; charset=utf-8' },
   '/titres-manifeste.js': { file: 'titres-manifeste.js', type: 'text/javascript; charset=utf-8' },
+  '/feuilles-manifeste.js': { file: 'feuilles-manifeste.js', type: 'text/javascript; charset=utf-8' },
   // Son portrait, sur la première page.
   '/photos/manou.jpg': { file: 'photos/manou.jpg', type: 'image/jpeg', cache: 'public, max-age=86400' },
   '/photos/manou-640.jpg': { file: 'photos/manou-640.jpg', type: 'image/jpeg', cache: 'public, max-age=86400' },
@@ -621,9 +622,12 @@ const server = createServer(async (req, res) => {
   const vignette = chemin.match(/^\/idees\/feuilles\/(\d{1,5})\.jpg$/);
   // L'image d'aperçu d'une recette (ou du livre), même garde : un nombre ou « livre ».
   const apercu = chemin.match(/^\/partage\/(\d{1,5}|livre)\.jpg$/);
+  // Ses feuilles rendues en images : identifiant du document, page, taille.
+  const feuille = chemin.match(/^\/feuilles\/([0-9a-f-]{36}-\d{1,2}(?:-900)?)\.webp$/);
   const cible = titre
     ? { file: `titres/${titre[1]}.png`, type: 'image/png', cache: 'public, max-age=604800' }
     : apercu ? { file: `partage/${apercu[1]}.jpg`, type: 'image/jpeg', cache: 'public, max-age=86400' }
+    : feuille ? { file: `feuilles/${feuille[1]}.webp`, type: 'image/webp', cache: 'public, max-age=604800' }
     : vignette ? { file: `demos/apercus/mur-variantes/feuilles/${vignette[1]}.jpg`, type: 'image/jpeg' }
     : chemin === '/idees' ? { file: 'demos/apercus/mur-variantes/index.html', type: 'text/html; charset=utf-8' }
     : FICHIERS[chemin];
@@ -641,7 +645,7 @@ const server = createServer(async (req, res) => {
     });
     res.end(contenu);
   } catch (err) {
-    if ((titre || vignette || apercu || chemin === '/idees') && err.code === 'ENOENT') {
+    if ((titre || vignette || apercu || feuille || chemin === '/idees') && err.code === 'ENOENT') {
       res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
       return res.end('Titre introuvable');
     }
