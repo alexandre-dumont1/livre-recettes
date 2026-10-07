@@ -5,7 +5,7 @@ Entrées :
   scripts/titres-boites.json                  la zone du titre, repérée à l'œil
                                                (en % de la page : x0, x1, y0, y1)
   scripts/titres-mesures-oeil.json            hauteur d'x et ligne de base, à l'œil
-Sortie : titres/<id>.png (encre en noir sur fond transparent), et
+Sortie : scripts/titres-200/<id>.png (encre en noir sur fond transparent), et
 scripts/titres-mesures.json (les mesures recalées sur la nouvelle découpe).
 
 Deux défauts corrigés le 02/10 : des titres COUPÉS (zone trop serrée) et des
@@ -54,7 +54,7 @@ OPTIONS = {
     '85': {'brut': True}, '93': {'brut': True}, '106': {'brut': True}, '96': {'brut': True},
 }
 nouvelles = json.load(open('scripts/titres-mesures.json')) if os.path.exists('scripts/titres-mesures.json') else {}
-nouvelles['_note'] = 'Généré par decouper-titres.py : [hauteur d’x, ligne de base] dans titres/<id>.png.'
+nouvelles['_note'] = 'Généré par decouper-titres.py : [hauteur d’x, ligne de base] dans scripts/titres-200/<id>.png.'
 for k, (x0, x1, y0, y1) in B.items():
     if seuls and k not in seuls: continue
     g = cv2.imread(f'{HI}/{k}.png', cv2.IMREAD_GRAYSCALE)
@@ -91,7 +91,7 @@ for k, (x0, x1, y0, y1) in B.items():
         a, Y0, X0 = encre(g, x0, x1, y0, y1, verticales=False)
         a, oy2, _ = serrer(a)
         rgba = np.zeros(a.shape + (4,), np.uint8); rgba[..., :3] = 20; rgba[..., 3] = a.astype(np.uint8)
-        cv2.imwrite(f'titres/{k}.png', rgba)
+        cv2.imwrite(f'scripts/titres-200/{k}.png', rgba)
         nouvelles[k] = [hx, int(base_page - Y0 - oy2)]
         continue
     # 4. Garder les traits qui traversent la bande, puis accents et soulignement
@@ -221,7 +221,7 @@ for k, (x0, x1, y0, y1) in B.items():
     # 7. Serrer sur ce qui reste, et recaler la ligne de base
     a, oy2, _ = serrer(a)
     rgba = np.zeros(a.shape + (4,), np.uint8); rgba[..., :3] = 20; rgba[..., 3] = a.astype(np.uint8)
-    cv2.imwrite(f'titres/{k}.png', rgba)
+    cv2.imwrite(f'scripts/titres-200/{k}.png', rgba)
     nouvelles[k] = [hx, int(base_page - Y0 - oy2)]
 
 # Fichier SÉPARÉ : titres-mesures-oeil.json reste la mesure d'origine (relative

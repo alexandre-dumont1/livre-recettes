@@ -5,18 +5,18 @@ pour tous, qu'ils aient été écrits au feutre ou au crayon pâle.
    puis une courbe (gamma 0,6) fonce les gris sans boucher les blancs.
 2. Épaissit d'un pixel les traits fins (crayon) et amincit les très épais (feutre).
 
-Travaille sur titres/*.png tout juste sortis de decouper-titres.py : NE PAS le
+Travaille sur scripts/titres-200/*.png tout juste sortis de decouper-titres.py : NE PAS le
 relancer seul sur des titres déjà encrés (il épaissirait une seconde fois).
 Toujours : decouper-titres.py, puis encrer-titres.py, puis retoucher-titres.py,
-puis mesurer-titres.py.
+puis affiner-titres.py, puis mesurer-titres.py.
 
 Usage : ~/one-dm-manou/.venv/bin/python scripts/encrer-titres.py
 """
 import cv2, numpy as np, os
 
-for f in sorted(os.listdir('titres')):
+for f in sorted(os.listdir('scripts/titres-200')):
     if not f.endswith('.png'): continue
-    im = cv2.imread(f'titres/{f}', cv2.IMREAD_UNCHANGED)
+    im = cv2.imread(f'scripts/titres-200/{f}', cv2.IMREAD_UNCHANGED)
     a = im[..., 3].astype(float)
     trait = a[a > 40]
     if not len(trait): continue
@@ -34,5 +34,5 @@ for f in sorted(os.listdir('titres')):
         a = cv2.erode(a, np.ones((3, 3), np.uint8))
     im[..., 3] = a.astype(np.uint8)
     im[..., :3] = 18
-    cv2.imwrite(f'titres/{f}', im)
+    cv2.imwrite(f'scripts/titres-200/{f}', im)
 print('titres encrés')

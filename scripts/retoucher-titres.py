@@ -2,7 +2,7 @@
 
 Après le découpage automatique, il restait quelques marques sur certains titres :
 un trou de perforateur, le trait de la marge, des bouts de la ligne d'en dessous.
-Pour chaque titre, on donne des zones (en pixels de l'image titres/<id>.png) ;
+Pour chaque titre, on donne des zones (en pixels de scripts/titres-200/<id>.png) ;
 on efface chaque tache d'encre ENTIÈREMENT contenue dans une zone. Une lettre qui
 déborde de la zone n'est jamais touchée : on ne coupe jamais un trait.
 
@@ -10,7 +10,7 @@ Ensuite on resserre l'image à gauche et à droite (une trace effacée au bord
 laisserait un vide). Jamais en haut ni en bas : la ligne d'écriture mesurée à
 l'œil (scripts/titres-mesures.json) se compte depuis le haut de l'image.
 
-Ordre du pipeline : decouper → encrer → RETOUCHER → mesurer.
+Ordre du pipeline : decouper → encrer → RETOUCHER → affiner → mesurer.
 Les zones sont en pixels de la sortie d'encrer-titres.py, AVANT le resserrage :
 ne jamais le relancer seul sur ses propres sorties (comme encrer, qui épaissirait
 deux fois), toujours repartir de decouper.
@@ -35,7 +35,7 @@ ZONES = {
 }
 
 for i, zones in ZONES.items():
-    chemin = f'titres/{i}.png'
+    chemin = f'scripts/titres-200/{i}.png'
     im = cv2.imread(chemin, cv2.IMREAD_UNCHANGED)
     a = im[..., 3]
     n, lab, st, _ = cv2.connectedComponentsWithStats((a > 40).astype(np.uint8), 8)

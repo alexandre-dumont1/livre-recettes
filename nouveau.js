@@ -245,11 +245,16 @@ function blocIngredients(ingrs, variantes) {
     <ul class="ingredients">${g.lignes.map(ligneIngredient).join('')}</ul>`).join('');
 }
 
-function blocEtapes(etapes) {
+// La durée d'une étape est un bouton : on la touche, le minuteur part.
+function blocEtapes(etapes, r) {
   return etapes.map(s => {
-    const reperes = [duree(s.duration_minutes), s.temperature_celsius ? `${s.temperature_celsius} °C` : null].filter(Boolean);
+    const nom = s.title || `Étape ${s.step_number}`;
+    const minuteur = s.duration_minutes ? `<button class="minuteur-lancer" data-min="${s.duration_minutes}"
+      data-nom="${echapper(nom)}" data-recette="${echapper(r.title)}" data-slug="${echapper(r.slug)}"
+      aria-label="Lancer un minuteur de ${duree(s.duration_minutes)} pour « ${echapper(nom)} »">${ICONE_MINUTEUR}${duree(s.duration_minutes)}</button>` : '';
+    const temp = s.temperature_celsius ? `<span class="repere">${s.temperature_celsius} °C</span>` : '';
     return `<section class="etape">
-      <h3>${echapper(s.title || `Étape ${s.step_number}`)}${reperes.length ? ` <span class="repere">${reperes.join(' · ')}</span>` : ''}</h3>
+      <h3>${echapper(nom)}${minuteur || temp ? ` <span class="reperes">${minuteur}${temp}</span>` : ''}</h3>
       <p>${echapper(s.description)}</p>
     </section>`;
   }).join('');
@@ -349,7 +354,7 @@ async function afficherRecette(slug) {
             <h2 class="col-titre">Ingrédients</h2>
             ${ingrs.length ? blocIngredients(ingrs, variantes) : horsLigne ? '' : '<p class="prep">Pas de liste : tout est sur sa feuille.</p>'}
           </div>
-          <div class="col-etapes">${etapes.length ? blocEtapes(etapes) : ''}</div>
+          <div class="col-etapes">${etapes.length ? blocEtapes(etapes, r) : ''}</div>
         </div>
         ${r.notes ? `<aside class="sa-note"><h2 class="col-titre">Sa note</h2><p>${echapper(r.notes)}</p></aside>` : ''}
         <nav class="folio" aria-label="Recettes voisines">
@@ -368,9 +373,15 @@ async function afficherRecette(slug) {
   window.scrollTo(0, 0);
   main().focus({ preventScroll: true });
 
-  // Ses feuilles, toutes leurs pages (dix PDF en ont deux).
+  // Ses feuilles, toutes leurs pages (dix PDF en ont deux). Déjà rendues en
+  // images quand c'est possible (scripts/feuilles-images.py) : elles s'affichent
+  // tout de suite. Sinon (feuille ajoutée depuis), on dessine le PDF.
   const zone = document.getElementById('feuilles');
-  for (const f of feuilles) await poserFeuilles(zone, f.public_url);
+  for (const f of feuilles) {
+    const pret = window.FEUILLES?.[f.id];
+    if (pret && pret.pdf === f.public_url) poserImages(zone, f.id, pret.pages);
+    else await poserFeuilles(zone, f.public_url);
+  }
 
   brancherRecette(r, cleDocs, slug);
 }
@@ -435,6 +446,101 @@ async function envoyerRecette(r) {
     msg.textContent = `Copie ce lien : ${url}`;
   }
 }
+
+// ── MINUTEURS ────────────────────────────────────────────────────────────────
+// Plusieurs à la fois (la pâte repose pendant que le four chauffe). Ils vivent
+// hors de la page de la recette : on peut aller voir une autre recette, la barre
+// du bas les garde. On retient l'heure de fin, pas un décompte : un onglet mis
+// en veille ralentit les horloges, l'heure de fin, elle, ne ment pas. Ils
+// survivent à un rechargement de la page (stockés dans ce navigateur).
+
+const ICONE_MINUTEUR = '<svg class="icone-minuteur" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 9v4l2.5 2.5M9 2h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+let minuteurs = [];
+let sonnerie = null, audio = null, tic = null, verrouMinuteur = null;
+
+try { minuteurs = JSON.parse(localStorage.getItem('minuteurs') || '[]').filter(m => m.fin > Date.now() - 3600e3); } catch { minuteurs = []; }
+function garderMinuteurs() { try { localStorage.setItem('minuteurs', JSON.stringify(minuteurs)); } catch { /* navigation privée */ } }
+
+function lancerMinuteur(b) {
+  // Le son doit être autorisé par un geste : on prépare l'audio ici, au toucher.
+  try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); audio.resume(); } catch { /* sans son */ }
+  minuteurs.push({ id: Date.now(), nom: b.dataset.nom, recette: b.dataset.recette, slug: b.dataset.slug, duree: Number(b.dataset.min) * 60e3, fin: Date.now() + Number(b.dataset.min) * 60e3 });
+  garderMinuteurs();
+  if ('wakeLock' in navigator && !verrouMinuteur) navigator.wakeLock.request('screen').then(v => { verrouMinuteur = v; }).catch(() => {});
+  afficherMinuteurs();
+}
+
+function mmss(ms) {
+  const t = Math.max(0, Math.ceil(ms / 1000)), h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60), s = t % 60;
+  return h ? `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}` : `${m}:${String(s).padStart(2, '0')}`;
+}
+
+function bip() {
+  if (!audio) return;
+  const t = audio.currentTime;
+  for (const [d, f] of [[0, 880], [0.18, 880], [0.36, 1175]]) {
+    const o = audio.createOscillator(), g = audio.createGain();
+    o.frequency.value = f; o.type = 'sine';
+    g.gain.setValueAtTime(0.0001, t + d); g.gain.exponentialRampToValueAtTime(0.4, t + d + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + d + 0.16);
+    o.connect(g).connect(audio.destination); o.start(t + d); o.stop(t + d + 0.18);
+  }
+}
+
+function afficherMinuteurs() {
+  let barre = document.getElementById('minuteurs');
+  if (!barre) {
+    barre = Object.assign(document.createElement('div'), { id: 'minuteurs', className: 'minuteurs' });
+    barre.setAttribute('role', 'region'); barre.setAttribute('aria-label', 'Minuteurs');
+    document.body.appendChild(barre);
+    barre.addEventListener('click', e => {
+      const b = e.target.closest('button'); if (!b) return;
+      const id = Number(b.dataset.id);
+      if (b.dataset.action === 'plus') { const m = minuteurs.find(x => x.id === id); m.fin = Math.max(m.fin, Date.now()) + 60e3; m.duree += 60e3; m.sonne = false; }
+      else minuteurs = minuteurs.filter(x => x.id !== id);
+      garderMinuteurs(); afficherMinuteurs();
+    });
+  }
+  const maintenant = Date.now();
+  for (const m of minuteurs) if (!m.sonne && m.fin <= maintenant) {
+    m.sonne = true; garderMinuteurs();
+    navigator.vibrate?.([300, 150, 300, 150, 600]);
+  }
+  const sonnent = minuteurs.some(m => m.sonne);
+  if (sonnent && !sonnerie) { bip(); sonnerie = setInterval(bip, 1600); }
+  if (!sonnent && sonnerie) { clearInterval(sonnerie); sonnerie = null; }
+
+  barre.hidden = !minuteurs.length;
+  document.body.classList.toggle('avec-minuteurs', minuteurs.length > 0);
+  barre.innerHTML = minuteurs.map(m => `
+    <div class="minuteur${m.sonne ? ' minuteur--fini' : ''}" style="--fait:${Math.min(1, 1 - (m.fin - maintenant) / m.duree).toFixed(3)}">
+      <a class="minuteur-nom" href="#/recette/${encodeURIComponent(m.slug)}"><strong>${echapper(m.nom)}</strong><span>${echapper(m.recette)}</span></a>
+      <span class="minuteur-temps" ${m.sonne ? 'role="alert"' : ''}>${m.sonne ? "C'est l'heure !" : mmss(m.fin - maintenant)}</span>
+      <button class="minuteur-btn" data-action="plus" data-id="${m.id}" aria-label="Une minute de plus">+1 min</button>
+      <button class="minuteur-btn" data-action="stop" data-id="${m.id}" aria-label="${m.sonne ? 'Arrêter la sonnerie' : 'Annuler le minuteur'}">${m.sonne ? 'Arrêter' : '✕'}</button>
+    </div>`).join('');
+
+  // Le titre de l'onglet montre le prochain minuteur : on le voit d'un autre onglet.
+  const prochain = minuteurs.filter(m => !m.sonne).sort((a, b) => a.fin - b.fin)[0];
+  const base = document.title.replace(/^(⏰ |\d[\d:]* · )/, '');
+  document.title = sonnent ? `⏰ ${base}` : prochain ? `${mmss(prochain.fin - maintenant)} · ${base}` : base;
+
+  if (minuteurs.length && !tic) tic = setInterval(afficherMinuteurs, 500);
+  if (!minuteurs.length) {
+    clearInterval(tic); tic = null;
+    verrouMinuteur?.release().catch(() => {}); verrouMinuteur = null;
+  }
+}
+
+document.addEventListener('click', e => {
+  const b = e.target.closest('.minuteur-lancer');
+  if (b) lancerMinuteur(b);
+});
+// Revenu au premier plan : l'écran reste allumé tant qu'un minuteur tourne.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && minuteurs.length && 'wakeLock' in navigator) {
+    navigator.wakeLock.request('screen').then(v => { verrouMinuteur = v; }).catch(() => {});
+  }
+});
 
 let verrouEcran = null;
 async function basculerCuisine(bouton) {
@@ -508,6 +614,20 @@ async function poserFeuilles(zone, url) {
   }
 }
 
+// Ses feuilles déjà rendues : la petite image sur la page, la grande dans la loupe.
+function poserImages(zone, id, pages) {
+  pages.forEach(([w, h, v], i) => {
+    const p = i + 1, base = `feuilles/${id}-${p}`;
+    const b = document.createElement('button');
+    b.className = 'feuille';
+    b.setAttribute('aria-label', `Agrandir sa feuille${pages.length > 1 ? `, page ${p} sur ${pages.length}` : ''}`);
+    b.innerHTML = `<img src="${base}-900.webp?v=${v}" srcset="${base}-900.webp?v=${v} ${Math.min(900, w)}w, ${base}.webp?v=${v} ${w}w"
+      sizes="(max-width: 860px) 92vw, 460px" width="${w}" height="${h}" alt="Sa feuille${pages.length > 1 ? `, page ${p}` : ''}" decoding="async"><span class="feuille-loupe">Agrandir</span>`;
+    zone.appendChild(b);
+    b.addEventListener('click', () => ouvrirLoupeImage(`${base}.webp?v=${v}`, w, h));
+  });
+}
+
 // Ses feuilles ont été scannées sur une vitre A4 : la vraie feuille, plus petite,
 // flotte au milieu d'une grande marge blanche. On recadre sur ce qui n'est pas
 // blanc (son trait ET le bord de la feuille), avec une petite marge, pour que la
@@ -550,6 +670,14 @@ function ouvrirLoupe(url, numero = 1) {
   pdfjs().then(lib => lib.getDocument(url).promise).then(doc => doc.getPage(numero))
     .then(page => dessinerPage(corps.querySelector('canvas'), page, Math.min(window.innerWidth - 32, 1100)))
     .catch(() => { corps.innerHTML = '<p class="sans-feuille">Sa feuille n\'a pas pu être chargée.</p>'; });
+  document.getElementById('loupeFermer').focus();
+}
+function ouvrirLoupeImage(src, w, h) {
+  const loupe = document.getElementById('loupe');
+  dernierFocus = document.activeElement;
+  document.getElementById('loupeCorps').innerHTML = `<img src="${src}" width="${w}" height="${h}" alt="Sa feuille, en grand">`;
+  loupe.hidden = false;
+  document.body.classList.add('loupe-ouverte');
   document.getElementById('loupeFermer').focus();
 }
 function fermerLoupe() {
@@ -611,6 +739,7 @@ if ('serviceWorker' in navigator) {
     initAuth();   // en parallèle : ne retarde jamais la lecture
     await chargerLivre();
     window.addEventListener('hashchange', router);
+    if (minuteurs.length) afficherMinuteurs();
     setTimeout(() => proposerBrouillon().catch(() => {}), 1200);
     router();
   } catch (e) {
